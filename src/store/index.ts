@@ -63,6 +63,9 @@ interface StoreState {
   setTodos: (todos: Todo[]) => void
   setTodoLists: (lists: TodoList[]) => void
   setTags: (tags: Tag[]) => void
+  tombstones: string[]
+  addTombstone: (id: string) => void
+  clearTombstones: () => void
 }
 
 const defaultLists: TodoList[] = [
@@ -119,11 +122,16 @@ export const useStore = create<StoreState>((set) => ({
     todos: state.todos.map(t => t.id === id ? { ...t, deletedAt: Date.now() } : t)
   })),
   permanentlyDeleteTodo: (id) => set((state) => ({
-    todos: state.todos.filter(t => t.id !== id)
+    todos: state.todos.filter(t => t.id !== id),
+    tombstones: [...state.tombstones, id]
   })),
-  permanentlyDeleteAllTrash: () => set((state) => ({
-    todos: state.todos.filter(t => !t.deletedAt)
-  })),
+  permanentlyDeleteAllTrash: () => set((state) => {
+    const deletedIds = state.todos.filter(t => t.deletedAt).map(t => t.id)
+    return {
+      todos: state.todos.filter(t => !t.deletedAt),
+      tombstones: [...state.tombstones, ...deletedIds]
+    }
+  }),
   restoreTodo: (id) => set((state) => ({
     todos: state.todos.map(t => t.id === id ? { ...t, deletedAt: null } : t)
   })),
@@ -151,4 +159,7 @@ export const useStore = create<StoreState>((set) => ({
   setTodos: (todos) => set({ todos }),
   setTodoLists: (todoLists) => set({ todoLists }),
   setTags: (tags) => set({ tags }),
+  tombstones: [],
+  addTombstone: (id) => set((state) => ({ tombstones: [...state.tombstones, id] })),
+  clearTombstones: () => set({ tombstones: [] }),
 }))

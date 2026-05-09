@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
 import { useStore } from '../store'
-import { syncToGist, syncFromGist, initOctokit } from '../utils/github'
+import { syncToGist, syncFromGist, mergeSyncData, initOctokit } from '../utils/github'
 
 interface SettingsModalProps {
   onClose: () => void
@@ -88,7 +88,7 @@ export default function SettingsModal({ onClose }: SettingsModalProps) {
     setTimeout(() => setSyncMessage(''), 2000)
   }
 
-  const handleSyncToCloud = async () => {
+  const handleSync = async () => {
     if (!githubToken) {
       setSyncMessage('请先填写 GitHub Token')
       return
@@ -101,48 +101,33 @@ export default function SettingsModal({ onClose }: SettingsModalProps) {
     setSyncMessage('同步中...')
 
     initOctokit(githubToken)
-    const { todos, todoLists, tags } = useStore.getState()
-    const result = await syncToGist(gistId, encryptionKey, {
-      todos,
-      lists: todoLists,
-      tags,
-      updatedAt: Date.now()
-    })
+
+    const { todos, todoLists, tags, tombstones } = useStore.getState()
+    const local = { todos, lists: todoLists, tags, updatedAt: Date.now() }
+
+    // 1. 拉取云端数据
+    const remote = await syncFromGist(gistId, encryptionKey)
+
+    if (!remote.success) {
+      setSyncStatus('error')
+      setSyncMessage('同步失败: ' + (remote.error || '未知错误'))
+      setTimeout(() => setSyncMessage(''), 3000)
+      return
+    }
+
+    // 2. 合并数据
+    const merged = mergeSyncData(local, remote.data || local, tombstones)
+
+    // 3. 推送合并结果
+    const result = await syncToGist(gistId, encryptionKey, merged)
 
     if (result.success) {
+      // 4. 更新本地
+      if (merged.todos) useStore.getState().setTodos(merged.todos)
+      if (merged.lists) useStore.getState().setTodoLists(merged.lists)
+      if (merged.tags) useStore.getState().setTags(merged.tags)
       setSyncStatus('idle')
       setSyncMessage('同步成功 ✓')
-    } else {
-      setSyncStatus('error')
-      setSyncMessage('同步失败: ' + (result.error || '未知错误'))
-    }
-    setTimeout(() => setSyncMessage(''), 3000)
-  }
-
-  const handleSyncFromCloud = async () => {
-    if (!githubToken) {
-      setSyncMessage('请先填写 GitHub Token')
-      return
-    }
-    if (!gistId || !encryptionKey) {
-      setSyncMessage('请先填写 Gist ID 和加密密钥')
-      return
-    }
-    setSyncStatus('syncing')
-    setSyncMessage('同步中...')
-
-    initOctokit(githubToken)
-    const result = await syncFromGist(gistId, encryptionKey)
-
-    if (result.success && result.data) {
-      if (result.data.todos) useStore.getState().setTodos(result.data.todos)
-      if (result.data.lists) useStore.getState().setTodoLists(result.data.lists)
-      if (result.data.tags) useStore.getState().setTags(result.data.tags)
-      setSyncStatus('idle')
-      setSyncMessage('同步成功 ✓')
-    } else if (result.success && !result.data) {
-      setSyncStatus('idle')
-      setSyncMessage('云端暂无数据')
     } else {
       setSyncStatus('error')
       setSyncMessage('同步失败: ' + (result.error || '未知错误'))
@@ -247,14 +232,14 @@ export default function SettingsModal({ onClose }: SettingsModalProps) {
                 type="password"
                 value={githubToken}
                 onChange={(e) => setGithubToken(e.target.value)}
-                placeholder="GitHub Token (ghp_xxx)"
+                placeholder="GitHub Token"
                 className="input-field w-full text-sm"
               />
               <input
                 type="text"
                 value={gistId}
                 onChange={(e) => setGistId(e.target.value)}
-                placeholder="Gist ID 或 URL"
+                placeholder="Gist ID"
                 className="input-field w-full text-sm"
               />
               <input
@@ -265,25 +250,19 @@ export default function SettingsModal({ onClose }: SettingsModalProps) {
                 maxLength={8}
                 className="input-field w-full text-sm"
               />
-              <div className="flex gap-2">
-                <button onClick={handleSaveGist} className="btn-ghost flex-1">
-                  保存设置
-                </button>
-                <button
-                  onClick={handleSyncToCloud}
-                  disabled={syncStatus === 'syncing' || !gistId || !encryptionKey || !githubToken}
-                  className="btn-primary flex-1 disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  {syncStatus === 'syncing' ? '同步中...' : '上传到云端'}
-                </button>
-                <button
-                  onClick={handleSyncFromCloud}
-                  disabled={syncStatus === 'syncing' || !gistId || !encryptionKey || !githubToken}
-                  className="btn-ghost flex-1 disabled:opacity-50"
-                >
-                  {syncStatus === 'syncing' ? '同步中...' : '从云端下载'}
-                </button>
-              </div>
+
+              <button
+                onClick={handleSync}
+                disabled={syncStatus === 'syncing' || !gistId || !encryptionKey || !githubToken}
+                className="btn-primary w-full py-3 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {syncStatus === 'syncing' ? '同步中...' : '同步'}
+              </button>
+
+              <button onClick={handleSaveGist} className="btn-ghost w-full">
+                保存设置
+              </button>
+
               {syncMessage && (
                 <p
                   className="text-xs text-center"
@@ -303,7 +282,7 @@ export default function SettingsModal({ onClose }: SettingsModalProps) {
               <div className="flex items-center justify-between p-3 rounded-xl" style={{ background: 'var(--bg-tertiary)' }}>
                 <div>
                   <span className="text-sm font-medium" style={{ color: 'var(--text-secondary)' }}>自动同步</span>
-                  <p className="text-xs mt-0.5" style={{ color: 'var(--text-tertiary)' }}>定时上传数据到云端</p>
+                  <p className="text-xs mt-0.5" style={{ color: 'var(--text-tertiary)' }}>定时同步云端数据</p>
                 </div>
                 <button
                   onClick={() => {
@@ -337,8 +316,8 @@ export default function SettingsModal({ onClose }: SettingsModalProps) {
                       setSyncInterval(val)
                       window.electronAPI.setStore('syncInterval', val)
                     }}
-                    className="text-sm py-1.5 px-3"
-                    style={{ width: 'auto' }}
+                    className="text-sm py-1.5 px-3 pr-8"
+                    style={{ width: 'auto', minWidth: '100px' }}
                   >
                     <option value="15">15 分钟</option>
                     <option value="30">30 分钟</option>

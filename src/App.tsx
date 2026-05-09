@@ -34,18 +34,28 @@ export default function App() {
     })
 
     window.electronAPI.onAutoSyncTrigger(async () => {
-      const { todos, todoLists, tags } = useStore.getState()
+      const { todos, todoLists, tags, tombstones } = useStore.getState()
       if (!todos.length && !todoLists.length) return
 
       setSyncStatus('syncing')
-      const { syncToGist, initOctokit } = await import('./utils/github')
+      const { syncToGist, syncFromGist, mergeSyncData, initOctokit } = await import('./utils/github')
       const token = await window.electronAPI.getStore('githubToken') as string
       const gistId = await window.electronAPI.getStore('gistId') as string
       const key = await window.electronAPI.getStore('encryptionKey') as string
       if (!token || !gistId || !key) return
 
       initOctokit(token)
-      const result = await syncToGist(gistId, key, { todos, lists: todoLists, tags, updatedAt: Date.now() })
+      const local = { todos, lists: todoLists, tags, updatedAt: Date.now() }
+
+      const remote = await syncFromGist(gistId, key)
+      if (!remote.success) {
+        setSyncStatus('error')
+        return
+      }
+
+      const merged = mergeSyncData(local, remote.data || local, tombstones)
+      const result = await syncToGist(gistId, key, merged)
+
       if (result.success) {
         setLastSyncTime(Date.now())
         setSyncStatus('idle')

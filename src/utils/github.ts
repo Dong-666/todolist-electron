@@ -19,7 +19,9 @@ export async function syncToGist(gistId: string, encryptionKey: string, data: Sy
   if (!octokit) return { success: false, error: 'Octokit not initialized' }
 
   try {
-    const jsonData = JSON.stringify(data)
+    const { tombstones } = useStore.getState()
+    const filteredTodos = data.todos.filter(t => !tombstones.includes(t.id))
+    const jsonData = JSON.stringify({ ...data, todos: filteredTodos })
     const encrypted = await encrypt(jsonData, encryptionKey)
 
     await octokit.gists.update({
@@ -62,4 +64,47 @@ export async function syncFromGist(gistId: string, encryptionKey: string) {
 
 export function detectConflict(local: SyncData, remote: SyncData): boolean {
   return local.updatedAt > remote.updatedAt
+}
+
+export function mergeSyncData(local: SyncData, remote: SyncData, tombstones: string[] = []): SyncData {
+  const mergeTodos = (localTodos: Todo[], remoteTodos: Todo[]): Todo[] => {
+    const merged = new Map<string, Todo>()
+    for (const t of localTodos) {
+      if (!tombstones.includes(t.id)) merged.set(t.id, t)
+    }
+    for (const t of remoteTodos) {
+      if (tombstones.includes(t.id)) continue
+      const existing = merged.get(t.id)
+      if (!existing || t.updatedAt > existing.updatedAt) merged.set(t.id, t)
+    }
+    return Array.from(merged.values())
+  }
+
+  const mergeLists = (localLists: TodoList[], remoteLists: TodoList[]): TodoList[] => {
+    const merged = new Map<string, TodoList>()
+    for (const l of localLists) merged.set(l.id, l)
+    for (const l of remoteLists) {
+      const existing = merged.get(l.id)
+      if (!existing || (l as any).updatedAt > (existing as any).updatedAt) merged.set(l.id, l)
+    }
+    return Array.from(merged.values())
+  }
+
+  const mergeTags = (localTags: Tag[], remoteTags: Tag[]): Tag[] => {
+    const merged = new Map<string, Tag>()
+    for (const t of localTags) merged.set(t.id, t)
+    for (const t of remoteTags) {
+      const existing = merged.get(t.id)
+      if (!existing) merged.set(t.id, t)
+      else merged.set(t.id, t)
+    }
+    return Array.from(merged.values())
+  }
+
+  return {
+    todos: mergeTodos(local.todos, remote.todos),
+    lists: mergeLists(local.lists, remote.lists),
+    tags: mergeTags(local.tags, remote.tags),
+    updatedAt: Math.max(local.updatedAt, remote.updatedAt),
+  }
 }
