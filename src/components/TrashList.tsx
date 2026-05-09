@@ -8,53 +8,66 @@ export default function TrashList() {
 
   if (deletedTodos.length === 0) {
     return (
-      <div className="h-full flex flex-col theme-transition" style={{ background: 'var(--bg-primary)' }}>
+      <div className="h-full flex flex-col" style={{ background: 'var(--bg-primary)' }}>
         <div className="px-8 pt-8 pb-5">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              <div
-                className="w-12 h-12 rounded-2xl flex items-center justify-center text-2xl"
-                style={{ background: 'var(--bg-tertiary)' }}
-              >
-                🗑️
-              </div>
-              <div>
-                <h1 className="text-xl font-semibold" style={{ color: 'var(--text-primary)' }}>
-                  回收站
-                </h1>
-                <p className="text-xs mt-0.5" style={{ color: 'var(--text-tertiary)' }}>
-                  已删除的待办事项
-                </p>
-              </div>
+          <motion.div
+            className="flex items-center gap-4"
+            initial={{ opacity: 0, y: -20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.3 }}
+          >
+            <div
+              className="w-12 h-12 rounded-xl flex items-center justify-center text-xl"
+              style={{ background: 'var(--bg-tertiary)' }}
+            >
+              🗑️
             </div>
-          </div>
+            <div>
+              <h1 className="text-lg font-semibold" style={{ color: 'var(--text-primary)' }}>
+                回收站
+              </h1>
+              <p className="text-xs mt-0.5" style={{ color: 'var(--text-tertiary)' }}>
+                已删除的待办事项
+              </p>
+            </div>
+          </motion.div>
         </div>
 
         <div className="flex-1 flex items-center justify-center">
-          <div className="text-center">
+          <motion.div
+            initial={{ opacity: 0, scale: 0.8 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 0.3 }}
+            className="text-center"
+          >
             <div className="text-4xl mb-3 opacity-30">🗑️</div>
             <p className="text-sm" style={{ color: 'var(--text-tertiary)' }}>
               回收站是空的
             </p>
-          </div>
+          </motion.div>
         </div>
       </div>
     )
   }
 
   return (
-    <div className="h-full flex flex-col theme-transition" style={{ background: 'var(--bg-primary)' }}>
+    <div className="h-full flex flex-col" style={{ background: 'var(--bg-primary)' }}>
       <div className="px-8 pt-8 pb-5">
-        <div className="flex items-center justify-between">
+        <motion.div
+          className="flex items-center justify-between"
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.3 }}
+        >
           <div className="flex items-center gap-4">
             <div
-              className="w-12 h-12 rounded-2xl flex items-center justify-center text-2xl"
+              className="w-12 h-12 rounded-xl flex items-center justify-center text-xl"
               style={{ background: 'var(--bg-tertiary)' }}
             >
               🗑️
             </div>
             <div>
-              <h1 className="text-xl font-semibold" style={{ color: 'var(--text-primary)' }}>
+              <h1 className="text-lg font-semibold" style={{ color: 'var(--text-primary)' }}>
                 回收站
               </h1>
               <p className="text-xs mt-0.5" style={{ color: 'var(--text-tertiary)' }}>
@@ -63,76 +76,70 @@ export default function TrashList() {
             </div>
           </div>
 
-          {deletedTodos.length > 0 && (
-            <motion.button
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              whileHover={{ scale: 1.02 }}
-              whileTap={{ scale: 0.98 }}
-              onClick={permanentlyDeleteAllTrash}
-              className="px-4 py-2 rounded-xl text-sm font-medium"
-              style={{
-                background: 'rgba(239, 68, 68, 0.1)',
-                color: 'var(--danger)'
-              }}
-            >
-              清空回收站
-            </motion.button>
-          )}
-        </div>
+          <motion.button
+            onClick={() => {
+              if (confirm('确定要清空回收站吗？此操作不可恢复。')) {
+                permanentlyDeleteAllTrash()
+              }
+            }}
+            className="px-4 py-2 rounded-xl text-sm font-medium"
+            style={{
+              background: 'rgba(248, 113, 113, 0.12)',
+              color: 'var(--priority-high)'
+            }}
+            whileHover={{ scale: 1.05, backgroundColor: 'rgba(248, 113, 113, 0.2)' }}
+            whileTap={{ scale: 0.95 }}
+          >
+            清空回收站
+          </motion.button>
+        </motion.div>
       </div>
 
-      <div className="px-8 pb-5">
-        <div
-          className="h-px"
-          style={{
-            background: 'linear-gradient(90deg, transparent, var(--divider), transparent)'
-          }}
-        />
+      <div className="px-8">
+        <div className="divider" />
       </div>
 
-      <div className="flex-1 overflow-y-auto px-8 py-6">
+      <div className="flex-1 overflow-y-auto px-8 py-5">
         <AnimatePresence>
           {deletedTodos.map((todo, index) => (
             <motion.div
               key={todo.id}
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, x: -20 }}
-              transition={{ delay: index * 0.025, duration: 0.25 }}
+              initial={{ opacity: 0, y: 20, scale: 0.9 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, x: -30, scale: 0.9 }}
+              transition={{ delay: index * 0.04, duration: 0.3 }}
               className="mb-2.5"
             >
               <div
-                className="group flex items-center gap-4 p-4 rounded-2xl transition-all"
+                className="flex items-center gap-4 p-4 rounded-xl"
                 style={{
-                  background: 'var(--bg-secondary)',
-                  border: '1px solid var(--divider)',
-                  opacity: 0.7
+                  background: 'var(--bg-card)',
+                  border: '1px solid var(--border)'
                 }}
               >
-                <button
+                <motion.button
                   onClick={() => restoreTodo(todo.id)}
-                  className="w-8 h-8 rounded-lg flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-200"
-                  style={{
-                    color: 'var(--text-tertiary)'
-                  }}
                   onMouseEnter={(e) => {
-                    e.currentTarget.style.color = 'var(--success)'
-                    e.currentTarget.style.background = 'rgba(16, 185, 129, 0.1)'
+                    e.currentTarget.style.opacity = '1'
+                    e.currentTarget.style.background = 'rgba(59, 130, 246, 0.12)'
                   }}
                   onMouseLeave={(e) => {
-                    e.currentTarget.style.color = 'var(--text-tertiary)'
+                    e.currentTarget.style.opacity = '0.6'
                     e.currentTarget.style.background = 'transparent'
                   }}
+                  className="w-8 h-8 rounded-lg flex items-center justify-center transition-all"
+                  style={{ color: 'var(--accent)', opacity: 0.6 }}
+                  whileHover={{ scale: 1.1 }}
+                  whileTap={{ scale: 0.9 }}
                   title="恢复"
                 >
-                  <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.5">
+                  <svg width="14" height="14" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.5">
                     <path d="M2 6l3 3 5-5" />
                   </svg>
-                </button>
+                </motion.button>
 
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm truncate" style={{ color: 'var(--text-primary)' }}>
+                  <p className="text-sm truncate" title={todo.title} style={{ color: 'var(--text-primary)' }}>
                     {todo.title}
                   </p>
                   <p className="text-xs mt-0.5" style={{ color: 'var(--text-tertiary)' }}>
@@ -140,27 +147,31 @@ export default function TrashList() {
                   </p>
                 </div>
 
-                <button
-                  onClick={() => permanentlyDeleteTodo(todo.id)}
-                  className="w-8 h-8 rounded-lg flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-200"
-                  style={{
-                    color: 'var(--text-tertiary)'
+                <motion.button
+                  onClick={() => {
+                    if (confirm('确定要永久删除这条待办吗？此操作不可恢复。')) {
+                      permanentlyDeleteTodo(todo.id)
+                    }
                   }}
                   onMouseEnter={(e) => {
-                    e.currentTarget.style.color = 'var(--danger)'
-                    e.currentTarget.style.background = 'rgba(239, 68, 68, 0.1)'
+                    e.currentTarget.style.opacity = '1'
+                    e.currentTarget.style.background = 'rgba(248, 113, 113, 0.12)'
                   }}
                   onMouseLeave={(e) => {
-                    e.currentTarget.style.color = 'var(--text-tertiary)'
+                    e.currentTarget.style.opacity = '0.6'
                     e.currentTarget.style.background = 'transparent'
                   }}
+                  className="w-8 h-8 rounded-lg flex items-center justify-center transition-all"
+                  style={{ color: 'var(--priority-high)', opacity: 0.6 }}
+                  whileHover={{ scale: 1.1 }}
+                  whileTap={{ scale: 0.9 }}
                   title="永久删除"
                 >
-                  <svg width="12" height="12" viewBox="0 0 12 12" stroke="currentColor" strokeWidth="1.5">
+                  <svg width="14" height="14" viewBox="0 0 12 12" stroke="currentColor" strokeWidth="1.5">
                     <line x1="2" y1="2" x2="10" y2="10" />
                     <line x1="10" y1="2" x2="2" y2="10" />
                   </svg>
-                </button>
+                </motion.button>
               </div>
             </motion.div>
           ))}

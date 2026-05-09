@@ -41,11 +41,7 @@ export default function SettingsModal({ onClose }: SettingsModalProps) {
   }, [])
 
   const handleKeyRecording = (field: 'quickAdd' | 'showHide') => {
-    if (isRecording === field) {
-      setIsRecording(null)
-    } else {
-      setIsRecording(field)
-    }
+    setIsRecording(isRecording === field ? null : field)
   }
 
   const handleKeyDown = async (e: React.KeyboardEvent) => {
@@ -139,16 +135,9 @@ export default function SettingsModal({ onClose }: SettingsModalProps) {
     const result = await syncFromGist(gistId, encryptionKey)
 
     if (result.success && result.data) {
-      // Apply the synced data - replace local data with cloud data
-      if (result.data.todos) {
-        useStore.getState().setTodos(result.data.todos)
-      }
-      if (result.data.lists) {
-        useStore.getState().setTodoLists(result.data.lists)
-      }
-      if (result.data.tags) {
-        useStore.getState().setTags(result.data.tags)
-      }
+      if (result.data.todos) useStore.getState().setTodos(result.data.todos)
+      if (result.data.lists) useStore.getState().setTodoLists(result.data.lists)
+      if (result.data.tags) useStore.getState().setTags(result.data.tags)
       setSyncStatus('idle')
       setSyncMessage('同步成功 ✓')
     } else if (result.success && !result.data) {
@@ -162,53 +151,41 @@ export default function SettingsModal({ onClose }: SettingsModalProps) {
   }
 
   return (
-    <motion.div
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      exit={{ opacity: 0 }}
+    <div
       className="fixed inset-0 flex items-center justify-center z-50"
-      style={{ background: 'rgba(0,0,0,0.15)', backdropFilter: 'blur(8px)' }}
+      style={{ background: 'rgba(0, 0, 0, 0.4)' }}
       onClick={onClose}
     >
       <motion.div
-        initial={{ scale: 0.95, opacity: 0, y: 15 }}
-        animate={{ scale: 1, opacity: 1, y: 0 }}
-        exit={{ scale: 0.95, opacity: 0, y: 15 }}
-        transition={{ duration: 0.25, ease: [0.4, 0, 0.2, 1] }}
         onClick={(e) => e.stopPropagation()}
-        className="w-[460px] max-h-[85vh] flex flex-col rounded-3xl overflow-hidden"
+        className="w-[460px] max-h-[85vh] flex flex-col rounded-2xl overflow-hidden"
         style={{
           background: 'var(--bg-secondary)',
-          border: '1px solid var(--divider)',
+          border: '1px solid var(--border)',
           boxShadow: 'var(--shadow-lg)'
         }}
+        initial={{ opacity: 0, scale: 0.95, y: 20 }}
+        animate={{ opacity: 1, scale: 1, y: 0 }}
+        exit={{ opacity: 0, scale: 0.95, y: 20 }}
+        transition={{ duration: 0.2 }}
       >
-        <div className="shrink-0 p-7 pb-4">
-          <motion.h2
-            initial={{ opacity: 0, y: -5 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="text-xl font-semibold"
-            style={{ color: 'var(--text-primary)' }}
-          >
+        <div className="shrink-0 p-6 pb-4">
+          <h2 className="text-xl font-semibold" style={{ color: 'var(--text-primary)' }}>
             设置
-          </motion.h2>
+          </h2>
         </div>
 
-        <div className="flex-1 overflow-y-auto px-7 pb-6 space-y-6">
+        <div className="flex-1 overflow-y-auto px-6 pb-5 space-y-6">
           {/* Theme */}
-          <motion.div
-            initial={{ opacity: 0, y: 5 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.1 }}
-          >
-            <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-widest mb-3">外观</h3>
+          <div>
+            <h3 className="text-xs font-semibold uppercase tracking-widest mb-3" style={{ color: 'var(--text-tertiary)' }}>
+              外观
+            </h3>
             <div className="flex gap-2">
-              {(['light', 'dark', 'system'] as const).map((t, i) => (
-                <motion.button
+              {(['light', 'dark', 'system'] as const).map((t) => (
+                <button
                   key={t}
                   onClick={() => setTheme(t)}
-                  whileHover={{ scale: 1.02 }}
-                  whileTap={{ scale: 0.98 }}
                   className="flex-1 py-3 rounded-xl text-sm font-medium transition-all"
                   style={{
                     background: theme === t ? 'var(--accent)' : 'var(--bg-tertiary)',
@@ -216,18 +193,16 @@ export default function SettingsModal({ onClose }: SettingsModalProps) {
                   }}
                 >
                   {t === 'light' ? '☀️ 浅色' : t === 'dark' ? '🌙 深色' : '💻 系统'}
-                </motion.button>
+                </button>
               ))}
             </div>
-          </motion.div>
+          </div>
 
           {/* Shortcuts */}
-          <motion.div
-            initial={{ opacity: 0, y: 5 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.15 }}
-          >
-            <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-widest mb-3">快捷键</h3>
+          <div>
+            <h3 className="text-xs font-semibold uppercase tracking-widest mb-3" style={{ color: 'var(--text-tertiary)' }}>
+              快捷键
+            </h3>
             <div className="space-y-2">
               <div className="flex items-center justify-between p-3 rounded-xl" style={{ background: 'var(--bg-tertiary)' }}>
                 <span className="text-sm font-medium" style={{ color: 'var(--text-secondary)' }}>快速添加</span>
@@ -236,7 +211,7 @@ export default function SettingsModal({ onClose }: SettingsModalProps) {
                   onKeyDown={handleKeyDown}
                   className="px-4 py-2 rounded-lg text-xs font-mono transition-all"
                   style={{
-                    background: isRecording === 'quickAdd' ? 'var(--accent-soft)' : 'var(--bg-secondary)',
+                    background: isRecording === 'quickAdd' ? 'var(--accent-soft)' : 'var(--bg-card)',
                     color: isRecording === 'quickAdd' ? 'var(--accent)' : 'var(--text-primary)',
                     border: isRecording === 'quickAdd' ? '1px solid var(--accent)' : '1px solid transparent'
                   }}
@@ -251,7 +226,7 @@ export default function SettingsModal({ onClose }: SettingsModalProps) {
                   onKeyDown={handleKeyDown}
                   className="px-4 py-2 rounded-lg text-xs font-mono transition-all"
                   style={{
-                    background: isRecording === 'showHide' ? 'var(--accent-soft)' : 'var(--bg-secondary)',
+                    background: isRecording === 'showHide' ? 'var(--accent-soft)' : 'var(--bg-card)',
                     color: isRecording === 'showHide' ? 'var(--accent)' : 'var(--text-primary)',
                     border: isRecording === 'showHide' ? '1px solid var(--accent)' : '1px solid transparent'
                   }}
@@ -260,15 +235,13 @@ export default function SettingsModal({ onClose }: SettingsModalProps) {
                 </button>
               </div>
             </div>
-          </motion.div>
+          </div>
 
           {/* GitHub Sync */}
-          <motion.div
-            initial={{ opacity: 0, y: 5 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.2 }}
-          >
-            <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-widest mb-3">数据同步</h3>
+          <div>
+            <h3 className="text-xs font-semibold uppercase tracking-widest mb-3" style={{ color: 'var(--text-tertiary)' }}>
+              数据同步
+            </h3>
             <div className="space-y-3">
               <input
                 type="password"
@@ -293,41 +266,33 @@ export default function SettingsModal({ onClose }: SettingsModalProps) {
                 className="input-field w-full text-sm"
               />
               <div className="flex gap-2">
-                <motion.button
-                  whileHover={{ scale: 1.02 }}
-                  whileTap={{ scale: 0.98 }}
-                  onClick={handleSaveGist}
-                  className="btn-secondary flex-1"
-                >
+                <button onClick={handleSaveGist} className="btn-ghost flex-1">
                   保存设置
-                </motion.button>
-                <motion.button
-                  whileHover={{ scale: 1.02 }}
-                  whileTap={{ scale: 0.98 }}
+                </button>
+                <button
                   onClick={handleSyncToCloud}
                   disabled={syncStatus === 'syncing' || !gistId || !encryptionKey || !githubToken}
-                  className="btn-primary flex-1 disabled:opacity-50"
+                  className="btn-primary flex-1 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {syncStatus === 'syncing' ? '同步中...' : '上传到云端'}
-                </motion.button>
-                <motion.button
-                  whileHover={{ scale: 1.02 }}
-                  whileTap={{ scale: 0.98 }}
+                </button>
+                <button
                   onClick={handleSyncFromCloud}
                   disabled={syncStatus === 'syncing' || !gistId || !encryptionKey || !githubToken}
-                  className="btn-secondary flex-1 disabled:opacity-50"
+                  className="btn-ghost flex-1 disabled:opacity-50"
                 >
                   {syncStatus === 'syncing' ? '同步中...' : '从云端下载'}
-                </motion.button>
+                </button>
               </div>
               {syncMessage && (
-                <motion.p
-                  initial={{ opacity: 0, y: -5 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  className={`text-xs text-center ${syncMessage.includes('成功') ? 'text-green-500' : syncMessage.includes('失败') ? 'text-red-500' : 'text-gray-400'}`}
+                <p
+                  className="text-xs text-center"
+                  style={{
+                    color: syncMessage.includes('成功') ? 'var(--accent)' : syncMessage.includes('失败') ? 'var(--priority-high)' : 'var(--text-tertiary)'
+                  }}
                 >
                   {syncMessage}
-                </motion.p>
+                </p>
               )}
               {lastSyncTime && (
                 <p className="text-xs text-center" style={{ color: 'var(--text-tertiary)' }}>
@@ -340,27 +305,26 @@ export default function SettingsModal({ onClose }: SettingsModalProps) {
                   <span className="text-sm font-medium" style={{ color: 'var(--text-secondary)' }}>自动同步</span>
                   <p className="text-xs mt-0.5" style={{ color: 'var(--text-tertiary)' }}>定时上传数据到云端</p>
                 </div>
-                <motion.button
+                <button
                   onClick={() => {
                     const newValue = !autoSync
                     setAutoSync(newValue)
                     window.electronAPI.setStore('autoSync', newValue)
                     window.electronAPI.setStore('syncInterval', syncInterval)
                   }}
-                  whileTap={{ scale: 0.95 }}
                   className="w-12 h-6 rounded-full transition-all relative"
                   style={{
-                    background: autoSync ? 'var(--accent)' : 'var(--text-tertiary)',
+                    background: autoSync ? 'var(--accent)' : 'var(--text-tertiary)'
                   }}
                 >
                   <div
-                    className="absolute top-1 w-4 h-4 rounded-full bg-white transition-all"
+                    className="absolute top-1 w-4 h-4 rounded-full bg-white"
                     style={{
                       left: autoSync ? '24px' : '4px',
-                      transition: 'left 200ms'
+                      transition: 'left 200ms ease'
                     }}
                   />
-                </motion.button>
+                </button>
               </div>
               {/* Sync interval selector */}
               {autoSync && (
@@ -373,7 +337,7 @@ export default function SettingsModal({ onClose }: SettingsModalProps) {
                       setSyncInterval(val)
                       window.electronAPI.setStore('syncInterval', val)
                     }}
-                    className="input-field text-sm py-1.5 px-3"
+                    className="text-sm py-1.5 px-3"
                     style={{ width: 'auto' }}
                   >
                     <option value="15">15 分钟</option>
@@ -385,13 +349,11 @@ export default function SettingsModal({ onClose }: SettingsModalProps) {
                 </div>
               )}
             </div>
-          </motion.div>
+          </div>
         </div>
 
-        <div className="shrink-0 p-7 pt-4 flex justify-end">
-          <motion.button
-            whileHover={{ scale: 1.02 }}
-            whileTap={{ scale: 0.98 }}
+        <div className="shrink-0 p-6 pt-4 flex justify-end">
+          <button
             onClick={onClose}
             className="px-6 py-2.5 rounded-xl text-sm font-medium"
             style={{
@@ -400,9 +362,9 @@ export default function SettingsModal({ onClose }: SettingsModalProps) {
             }}
           >
             完成
-          </motion.button>
+          </button>
         </div>
       </motion.div>
-    </motion.div>
+    </div>
   )
 }

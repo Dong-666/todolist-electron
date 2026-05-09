@@ -1,13 +1,8 @@
+import { motion } from 'framer-motion'
 import { useStore, Todo } from '../store'
 
 interface TodoItemProps {
   todo: Todo
-}
-
-const priorityColors = {
-  1: { dot: '#f43f5e', glow: 'rgba(244, 63, 94, 0.2)' },
-  2: { dot: '#f59e0b', glow: 'rgba(245, 158, 11, 0.2)' },
-  3: { dot: '#6366f1', glow: 'rgba(99, 102, 241, 0.2)' },
 }
 
 export default function TodoItem({ todo }: TodoItemProps) {
@@ -15,11 +10,7 @@ export default function TodoItem({ todo }: TodoItemProps) {
 
   return (
     <div
-      className="group flex items-center gap-4 p-4 rounded-2xl transition-all"
-      style={{
-        background: todo.completed ? 'transparent' : 'var(--bg-secondary)',
-        border: '1px solid var(--divider)'
-      }}
+      className={`todo-item group ${todo.completed ? 'completed' : ''}`}
     >
       {/* Checkbox */}
       <button
@@ -37,6 +28,7 @@ export default function TodoItem({ todo }: TodoItemProps) {
       <div className="flex-1 min-w-0">
         <p
           className="text-sm truncate"
+          title={todo.title}
           style={{
             textDecoration: todo.completed ? 'line-through' : 'none',
             color: todo.completed ? 'var(--text-tertiary)' : 'var(--text-primary)'
@@ -53,7 +45,7 @@ export default function TodoItem({ todo }: TodoItemProps) {
                   key={tagId}
                   className="badge"
                   style={{
-                    backgroundColor: tag.color + '15',
+                    backgroundColor: tag.color + '20',
                     color: tag.color
                   }}
                 >
@@ -68,36 +60,34 @@ export default function TodoItem({ todo }: TodoItemProps) {
       {/* Priority indicator */}
       {todo.priority && !todo.completed && (
         <div
-          className="w-2 h-2 rounded-full"
-          style={{
-            backgroundColor: priorityColors[todo.priority].dot,
-            boxShadow: `0 0 6px ${priorityColors[todo.priority].glow}`
-          }}
+          className={`priority-dot priority-${['high', 'medium', 'low'][todo.priority - 1]}`}
           title={`P${todo.priority}`}
         />
       )}
 
-      {/* Delete button - subtle X icon */}
-      <button
-        onClick={() => deleteTodo(todo.id)}
-        className="w-8 h-8 rounded-lg flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-200"
-        style={{
-          color: 'var(--text-tertiary)'
-        }}
-        onMouseEnter={(e) => {
-          e.currentTarget.style.color = 'var(--danger)'
-          e.currentTarget.style.background = 'rgba(239, 68, 68, 0.1)'
-        }}
-        onMouseLeave={(e) => {
-          e.currentTarget.style.color = 'var(--text-tertiary)'
-          e.currentTarget.style.background = 'transparent'
-        }}
-      >
-        <svg width="12" height="12" viewBox="0 0 12 12" stroke="currentColor" strokeWidth="1.5">
-          <line x1="2" y1="2" x2="10" y2="10" />
-          <line x1="10" y1="2" x2="2" y2="10" />
-        </svg>
-      </button>
+      {/* Delete button - always visible when not completed */}
+      {!todo.completed && (
+        <button
+          onClick={() => deleteTodo(todo.id)}
+          className="delete-btn"
+          style={{ opacity: 0.6 }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.opacity = '1'
+            e.currentTarget.style.color = 'var(--priority-high)'
+            e.currentTarget.style.background = 'rgba(248, 113, 113, 0.12)'
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.opacity = '0.6'
+            e.currentTarget.style.color = 'var(--text-tertiary)'
+            e.currentTarget.style.background = 'transparent'
+          }}
+        >
+          <svg width="12" height="12" viewBox="0 0 12 12" stroke="currentColor" strokeWidth="1.5">
+            <line x1="2" y1="2" x2="10" y2="10" />
+            <line x1="10" y1="2" x2="2" y2="10" />
+          </svg>
+        </button>
+      )}
     </div>
   )
 }

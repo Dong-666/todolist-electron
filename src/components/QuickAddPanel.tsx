@@ -42,40 +42,36 @@ export default function QuickAddPanel({ onClose }: QuickAddPanelProps) {
     setTitle('')
   }
 
-  const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === 'Escape') {
-      onClose()
-    }
-  }
-
   return (
     <motion.div
+      className="fixed inset-0 flex items-center justify-center z-50"
+      style={{ background: 'rgba(0, 0, 0, 0.6)', backdropFilter: 'blur(8px)' }}
+      onClick={onClose}
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
-      className="fixed inset-0 flex items-center justify-center z-50"
-      style={{ background: 'rgba(0,0,0,0.15)', backdropFilter: 'blur(8px)' }}
-      onClick={onClose}
+      transition={{ duration: 0.2 }}
     >
       <motion.div
-        initial={{ scale: 0.95, opacity: 0, y: 15 }}
-        animate={{ scale: 1, opacity: 1, y: 0 }}
-        exit={{ scale: 0.95, opacity: 0, y: 15 }}
-        transition={{ duration: 0.2, ease: [0.4, 0, 0.2, 1] }}
         onClick={(e) => e.stopPropagation()}
-        onKeyDown={handleKeyDown}
-        className="w-[480px] p-6 rounded-3xl shadow-2xl"
+        onKeyDown={(e) => e.key === 'Escape' && onClose()}
+        className="w-[480px] p-6 rounded-2xl"
         style={{
           background: 'var(--bg-secondary)',
-          border: '1px solid var(--divider)',
+          border: '1px solid var(--border)',
           boxShadow: 'var(--shadow-lg)'
         }}
+        initial={{ scale: 0.9, opacity: 0, y: 30 }}
+        animate={{ scale: 1, opacity: 1, y: 0 }}
+        exit={{ scale: 0.9, opacity: 0, y: 30 }}
+        transition={{ duration: 0.3, ease: [0.34, 1.56, 0.64, 1] }}
       >
         <motion.h2
-          initial={{ opacity: 0, y: -5 }}
-          animate={{ opacity: 1, y: 0 }}
           className="text-lg font-semibold mb-5"
           style={{ color: 'var(--text-primary)' }}
+          initial={{ opacity: 0, y: -10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.1 }}
         >
           快速添加
         </motion.h2>
@@ -90,29 +86,37 @@ export default function QuickAddPanel({ onClose }: QuickAddPanelProps) {
             className="input-field w-full text-sm"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            transition={{ delay: 0.1 }}
+            transition={{ delay: 0.15 }}
+            autoFocus
           />
 
           <motion.select
             value={selectedListId}
             onChange={(e) => setSelectedListId(e.target.value)}
-            className="input-field w-full text-sm"
+            className="w-full"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            transition={{ delay: 0.15 }}
+            transition={{ delay: 0.2 }}
           >
             {todoLists.map(list => (
-              <option key={list.id} value={list.id}>{list.icon} {list.name}</option>
+              <option key={list.id} value={list.id}>
+                {list.icon} {list.name}
+              </option>
             ))}
           </motion.select>
 
-          <div className="flex justify-end gap-3 pt-3">
+          <motion.div
+            className="flex justify-end gap-3 pt-2"
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.25 }}
+          >
             <motion.button
               type="button"
               onClick={onClose}
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.98 }}
-              className="px-5 py-2.5 text-sm font-medium rounded-xl transition-all"
+              className="px-5 py-2.5 text-sm font-medium rounded-xl"
               style={{
                 color: 'var(--text-secondary)',
                 background: 'var(--bg-tertiary)'
@@ -123,13 +127,13 @@ export default function QuickAddPanel({ onClose }: QuickAddPanelProps) {
             <motion.button
               type="submit"
               disabled={!title.trim()}
-              whileHover={{ scale: 1.02 }}
-              whileTap={{ scale: 0.98 }}
-              className="btn-primary disabled:opacity-40 disabled:cursor-not-allowed"
+              whileHover={title.trim() ? { scale: 1.03 } : {}}
+              whileTap={{ scale: 0.97 }}
+              className="btn-primary disabled:opacity-30 disabled:cursor-not-allowed"
             >
               Enter 添加
             </motion.button>
-          </div>
+          </motion.div>
         </form>
       </motion.div>
     </motion.div>

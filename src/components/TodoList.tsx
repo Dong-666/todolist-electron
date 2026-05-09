@@ -28,80 +28,68 @@ export default function TodoList() {
   const completedCount = filteredTodos.filter(t => t.completed).length
 
   return (
-    <div className="h-full flex flex-col theme-transition" style={{ background: 'var(--bg-primary)' }}>
+    <div className="h-full flex flex-col" style={{ background: 'var(--bg-primary)' }}>
       {/* Header */}
       <div className="px-8 pt-8 pb-5">
-        <div className="flex items-center justify-between">
-          <motion.div
-            initial={{ opacity: 0, y: -5 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="flex items-center gap-4"
-          >
+        <motion.div
+          className="flex items-center justify-between"
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.25 }}
+        >
+          <div className="flex items-center gap-4">
             <div
-              className="w-12 h-12 rounded-2xl flex items-center justify-center text-2xl"
-              style={{ background: 'var(--accent-soft)' }}
+              className="w-12 h-12 rounded-xl flex items-center justify-center text-xl"
+              style={{ background: 'var(--bg-tertiary)' }}
             >
               {activeList?.icon}
             </div>
             <div>
-              <h1 className="text-xl font-semibold" style={{ color: 'var(--text-primary)' }}>
+              <h1 className="text-lg font-semibold" style={{ color: 'var(--text-primary)' }}>
                 {activeList?.name}
               </h1>
               <p className="text-xs mt-0.5" style={{ color: 'var(--text-tertiary)' }}>
-                {activeCount > 0 ? `${activeCount} 项待完成` : completedCount > 0 ? '全部完成 ✓' : '暂无待办'}
+                {activeCount > 0 ? `${activeCount} 项待完成` : completedCount > 0 ? '全部完成' : '暂无待办'}
               </p>
             </div>
-          </motion.div>
+          </div>
 
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 0.1 }}
-            className="flex items-center gap-2"
+          <select
+            value={filter.status}
+            onChange={(e) => setFilter({ status: e.target.value as 'all' | 'active' | 'completed' })}
           >
-            <select
-              value={filter.status}
-              onChange={(e) => setFilter({ status: e.target.value as 'all' | 'active' | 'completed' })}
-              className="text-xs px-4 py-2 rounded-xl cursor-pointer transition-all"
-              style={{
-                background: 'var(--bg-tertiary)',
-                color: 'var(--text-secondary)',
-                border: 'none'
-              }}
-            >
-              <option value="all">全部</option>
-              <option value="active">待完成</option>
-              <option value="completed">已完成</option>
-            </select>
-          </motion.div>
-        </div>
+            <option value="all">全部</option>
+            <option value="active">待完成</option>
+            <option value="completed">已完成</option>
+          </select>
+        </motion.div>
       </div>
 
       {/* Add form */}
-      <div className="px-8 pb-5">
+      <motion.div
+        className="px-8 pb-5"
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.2 }}
+      >
         <AddTodoForm listId={activeListId} />
-      </div>
+      </motion.div>
 
-      {/* Divider with gradient */}
+      {/* Divider */}
       <div className="px-8">
-        <div
-          className="h-px"
-          style={{
-            background: 'linear-gradient(90deg, transparent, var(--divider), transparent)'
-          }}
-        />
+        <div className="divider" />
       </div>
 
       {/* Todo list */}
-      <div className="flex-1 overflow-y-auto px-8 py-6" style={{ pointerEvents: 'auto' }}>
-        <AnimatePresence mode="popLayout">
+      <div className="flex-1 overflow-y-auto px-8 py-5">
+        <AnimatePresence>
           {filteredTodos.map((todo, index) => (
             <motion.div
               key={todo.id}
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, x: -20 }}
-              transition={{ delay: index * 0.025, duration: 0.25 }}
+              initial={{ opacity: 0, y: 20, scale: 0.9 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, x: -30, scale: 0.9 }}
+              transition={{ delay: index * 0.04, duration: 0.3 }}
               className="mb-2.5"
             >
               <TodoItem todo={todo} />
@@ -111,11 +99,12 @@ export default function TodoList() {
 
         {filteredTodos.length === 0 && (
           <motion.div
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="text-center py-20"
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 0.25 }}
+            className="text-center py-16"
           >
-            <div className="text-5xl mb-4 opacity-20">📋</div>
+            <div className="text-4xl mb-3 opacity-30">📋</div>
             <p className="text-sm" style={{ color: 'var(--text-tertiary)' }}>
               {filter.status === 'all' ? '暂无待办事项' : filter.status === 'active' ? '没有待完成的事项' : '没有已完成的事项'}
             </p>

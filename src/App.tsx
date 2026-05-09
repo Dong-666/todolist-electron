@@ -11,33 +11,14 @@ import TrashList from './components/TrashList'
 export default function App() {
   const { theme, setTheme, quickAddOpen, setQuickAddOpen, setLastSyncTime, setSyncStatus } = useStore()
   const [settingsOpen, setSettingsOpen] = useState(false)
-
-  const handleSyncToCloud = async () => {
-    const { todos, todoLists, tags } = useStore.getState()
-    if (!todos.length && !todoLists.length) return
-
-    setSyncStatus('syncing')
-    const { syncToGist, initOctokit } = await import('./utils/github')
-    const token = await window.electronAPI.getStore('githubToken') as string
-    const gistId = await window.electronAPI.getStore('gistId') as string
-    const key = await window.electronAPI.getStore('encryptionKey') as string
-    if (!token || !gistId || !key) return
-
-    initOctokit(token)
-    const result = await syncToGist(gistId, key, { todos, lists: todoLists, tags, updatedAt: Date.now() })
-    if (result.success) {
-      setLastSyncTime(Date.now())
-      setSyncStatus('idle')
-    } else {
-      setSyncStatus('error')
-    }
-  }
+  const [ready, setReady] = useState(false)
 
   useEffect(() => {
     const initTheme = async () => {
       const systemTheme = await window.electronAPI.getTheme()
       const savedTheme = await window.electronAPI.getStore('theme') as 'light' | 'dark' | 'system' | undefined
       setTheme(savedTheme || systemTheme)
+      setReady(true)
     }
     initTheme()
 
@@ -52,43 +33,57 @@ export default function App() {
       setQuickAddOpen(true)
     })
 
-    window.electronAPI.onAutoSyncTrigger(() => {
-      handleSyncToCloud()
+    window.electronAPI.onAutoSyncTrigger(async () => {
+      const { todos, todoLists, tags } = useStore.getState()
+      if (!todos.length && !todoLists.length) return
+
+      setSyncStatus('syncing')
+      const { syncToGist, initOctokit } = await import('./utils/github')
+      const token = await window.electronAPI.getStore('githubToken') as string
+      const gistId = await window.electronAPI.getStore('gistId') as string
+      const key = await window.electronAPI.getStore('encryptionKey') as string
+      if (!token || !gistId || !key) return
+
+      initOctokit(token)
+      const result = await syncToGist(gistId, key, { todos, lists: todoLists, tags, updatedAt: Date.now() })
+      if (result.success) {
+        setLastSyncTime(Date.now())
+        setSyncStatus('idle')
+      } else {
+        setSyncStatus('error')
+      }
     })
-  }, [setTheme, setQuickAddOpen])
+  }, [setTheme, setQuickAddOpen, setLastSyncTime, setSyncStatus])
 
   useEffect(() => {
-    document.documentElement.classList.toggle('dark', theme === 'dark')
+    const isDark = theme === 'dark'
+    document.documentElement.classList.toggle('light', !isDark)
   }, [theme])
 
-  return (
-    <div className="h-screen w-screen overflow-hidden theme-transition relative" style={{ background: 'var(--bg-primary)' }}>
-      {/* Subtle noise texture overlay */}
-      <div className="noise-overlay" />
+  if (!ready) {
+    return (
+      <div className="h-screen w-screen overflow-hidden relative" style={{ background: 'var(--bg-primary)' }} />
+    )
+  }
 
-      <div className="h-full w-full flex flex-col rounded-2xl overflow-hidden relative" style={{ border: '1px solid var(--divider)' }}>
+  const activeListId = useStore.getState().activeListId
+
+  return (
+    <div className="h-screen w-screen overflow-hidden relative" style={{ background: 'var(--bg-primary)' }}>
+      <div className="grid-pattern" />
+
+      <div className="h-full w-full flex flex-col relative z-10">
         <TitleBar onSettingsClick={() => setSettingsOpen(true)} />
 
         <div className="flex flex-1 overflow-hidden">
           <Sidebar />
 
-          <main className="flex-1 overflow-hidden" style={{ pointerEvents: 'auto' }}>
-            <AnimatePresence mode="wait">
-              <motion.div
-                key={useStore.getState().activeListId}
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                transition={{ duration: 0.15 }}
-                className="h-full"
-              >
-                {useStore.getState().activeListId === '__trash__' ? (
-                  <TrashList />
-                ) : (
-                  <TodoList />
-                )}
-              </motion.div>
-            </AnimatePresence>
+          <main className="flex-1 overflow-hidden">
+            {activeListId === '__trash__' ? (
+              <TrashList key="trash" />
+            ) : (
+              <TodoList key={activeListId} />
+            )}
           </main>
         </div>
 
