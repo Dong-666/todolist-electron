@@ -2,7 +2,7 @@
 
 一个简洁美观的待办事项管理桌面应用，支持 GitHub Gist 云端同步。
 
-![效果预览](public/screenshot.png)
+![alt text](/public/image.png)
 
 ## 功能特性
 
