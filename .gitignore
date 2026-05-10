@@ -6,6 +6,9 @@ dist/
 dist-electron/
 release/
 
+# study doc
+.study
+
 # Environment files
 .env
 .env.local
