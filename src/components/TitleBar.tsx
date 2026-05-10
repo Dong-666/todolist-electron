@@ -1,12 +1,15 @@
 import { motion } from 'framer-motion'
+import { WeatherData, getWeatherIcon } from '../utils/weather'
 
 interface TitleBarProps {
   onSettingsClick: () => void
+  theme?: 'light' | 'dark'
+  weather?: WeatherData | null
 }
 
-export default function TitleBar({ onSettingsClick }: TitleBarProps) {
+export default function TitleBar({ onSettingsClick, theme = 'light', weather }: TitleBarProps) {
   return (
-    <div className="h-11 flex items-center justify-between px-4">
+    <div className="h-11 flex items-center justify-between px-4 relative">
       {/* Left section */}
       <div className="flex items-center gap-3 no-drag">
         <motion.button
@@ -17,15 +20,32 @@ export default function TitleBar({ onSettingsClick }: TitleBarProps) {
           whileTap={{ scale: 0.9 }}
           title="设置"
         >
-          <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5">
-            <circle cx="8" cy="8" r="2.5" />
-            <path d="M8 1v2M8 13v2M1 8h2M13 8h2M3.05 3.05l1.4 1.4M11.55 11.55l1.4 1.4M3.05 12.95l1.4-1.4M11.55 4.45l1.4-1.4" />
-          </svg>
+          {theme === 'dark' ? (
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5">
+              <path d="M13.5 10.5A6 6 0 0 1 5.5 2.5a6 6 0 1 0 8 8z" />
+            </svg>
+          ) : (
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5">
+              <circle cx="8" cy="8" r="2.5" />
+              <path d="M8 1v2M8 13v2M1 8h2M13 8h2M3.05 3.05l1.4 1.4M11.55 11.55l1.4 1.4M3.05 12.95l1.4-1.4M11.55 4.45l1.4-1.4" />
+            </svg>
+          )}
         </motion.button>
+
+        {weather && (
+          <div
+            className="flex items-center gap-1.5 px-2 py-1 rounded-lg"
+            style={{ background: 'var(--bg-tertiary)', color: 'var(--text-secondary)' }}
+          >
+            <span className="text-sm">{getWeatherIcon(weather.code)}</span>
+            <span className="text-xs font-medium">{weather.city}</span>
+            <span className="text-xs" style={{ color: 'var(--text-tertiary)' }}>{weather.temperature}°C</span>
+          </div>
+        )}
       </div>
 
       {/* Center - drag region */}
-      <div className="flex-1 flex justify-center drag-region">
+      <div className="drag-region flex-1 flex justify-center">
         <div
           className="px-3 py-1 rounded-full"
           style={{ background: 'var(--accent-soft)' }}

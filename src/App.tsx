@@ -7,20 +7,25 @@ import TodoList from './components/TodoList'
 import QuickAddPanel from './components/QuickAddPanel'
 import SettingsModal from './components/SettingsModal'
 import TrashList from './components/TrashList'
+import { fetchWeather } from './utils/weather'
 
 export default function App() {
-  const { theme, setTheme, quickAddOpen, setQuickAddOpen, setLastSyncTime, setSyncStatus } = useStore()
+  const { theme, setTheme, quickAddOpen, setQuickAddOpen, setLastSyncTime, setSyncStatus, weather, setWeather } = useStore()
   const [settingsOpen, setSettingsOpen] = useState(false)
   const [ready, setReady] = useState(false)
 
   useEffect(() => {
-    const initTheme = async () => {
+    const initApp = async () => {
       const systemTheme = await window.electronAPI.getTheme()
       const savedTheme = await window.electronAPI.getStore('theme') as 'light' | 'dark' | 'system' | undefined
       setTheme(savedTheme || systemTheme)
+
+      const weatherData = await fetchWeather()
+      setWeather(weatherData)
+
       setReady(true)
     }
-    initTheme()
+    initApp()
 
     window.electronAPI.onThemeChanged((newTheme) => {
       const savedTheme = useStore.getState().theme
@@ -63,7 +68,7 @@ export default function App() {
         setSyncStatus('error')
       }
     })
-  }, [setTheme, setQuickAddOpen, setLastSyncTime, setSyncStatus])
+  }, [setTheme, setQuickAddOpen, setLastSyncTime, setSyncStatus, setWeather])
 
   useEffect(() => {
     const isDark = theme === 'dark'
@@ -83,7 +88,7 @@ export default function App() {
       <div className="grid-pattern" />
 
       <div className="h-full w-full flex flex-col relative z-10">
-        <TitleBar onSettingsClick={() => setSettingsOpen(true)} />
+        <TitleBar onSettingsClick={() => setSettingsOpen(true)} theme={theme} weather={weather} />
 
         <div className="flex flex-1 overflow-hidden">
           <Sidebar />

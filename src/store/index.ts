@@ -1,4 +1,5 @@
 import { create } from 'zustand'
+import { WeatherData } from '../utils/weather'
 
 export interface Todo {
   id: string
@@ -66,6 +67,8 @@ interface StoreState {
   tombstones: string[]
   addTombstone: (id: string) => void
   clearTombstones: () => void
+  weather: WeatherData | null
+  setWeather: (weather: WeatherData | null) => void
 }
 
 const defaultLists: TodoList[] = [
@@ -162,4 +165,6 @@ export const useStore = create<StoreState>((set) => ({
   tombstones: [],
   addTombstone: (id) => set((state) => ({ tombstones: [...state.tombstones, id] })),
   clearTombstones: () => set({ tombstones: [] }),
+  weather: null,
+  setWeather: (weather) => set({ weather }),
 }))
