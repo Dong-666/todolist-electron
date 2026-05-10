@@ -1,5 +1,6 @@
 import { create } from 'zustand'
 import { WeatherData } from '../utils/weather'
+import { FOCUS_DURATION, BREAK_DURATION } from '../utils/pomodoro'
 
 export interface Todo {
   id: string
@@ -28,7 +29,26 @@ export interface Tag {
   color: string
 }
 
-interface StoreState {
+export type FocusStatus = 'idle' | 'working' | 'paused' | 'break' | 'completed'
+
+interface FocusState {
+  focusMode: boolean
+  focusTodoId: string | null
+  focusTimeRemaining: number
+  focusStatus: FocusStatus
+  focusPreviousStatus: FocusStatus | null
+  setFocusMode: (mode: boolean) => void
+  setFocusTodoId: (id: string | null) => void
+  setFocusTimeRemaining: (time: number) => void
+  setFocusStatus: (status: FocusStatus) => void
+  startFocus: (todoId: string) => void
+  pauseFocus: () => void
+  resumeFocus: () => void
+  endFocus: () => void
+  tickFocus: () => void
+}
+
+interface StoreState extends FocusState {
   theme: 'light' | 'dark' | 'system'
   setTheme: (theme: 'light' | 'dark' | 'system') => void
   todoLists: TodoList[]
@@ -167,4 +187,42 @@ export const useStore = create<StoreState>((set) => ({
   clearTombstones: () => set({ tombstones: [] }),
   weather: null,
   setWeather: (weather) => set({ weather }),
+  focusMode: false,
+  focusTodoId: null,
+  focusTimeRemaining: FOCUS_DURATION,
+  focusStatus: 'idle',
+  setFocusMode: (mode) => set({ focusMode: mode }),
+  setFocusTodoId: (id) => set({ focusTodoId: id }),
+  setFocusTimeRemaining: (time) => set({ focusTimeRemaining: time }),
+  setFocusStatus: (status) => set({ focusStatus: status }),
+  startFocus: (todoId) => set({
+    focusMode: true,
+    focusTodoId: todoId,
+    focusTimeRemaining: FOCUS_DURATION,
+    focusStatus: 'working'
+  }),
+  focusPreviousStatus: null,
+  pauseFocus: () => set((state) => ({
+    focusStatus: 'paused',
+    focusPreviousStatus: state.focusStatus === 'paused' ? state.focusPreviousStatus : state.focusStatus
+  })),
+  resumeFocus: () => set((state) => ({
+    focusStatus: state.focusPreviousStatus || 'working'
+  })),
+  endFocus: () => set({
+    focusMode: false,
+    focusTodoId: null,
+    focusTimeRemaining: FOCUS_DURATION,
+    focusStatus: 'idle'
+  }),
+  tickFocus: () => set((state) => {
+    if (state.focusTimeRemaining <= 0) {
+      if (state.focusStatus === 'working') {
+        return { focusStatus: 'break', focusTimeRemaining: BREAK_DURATION }
+      } else if (state.focusStatus === 'break') {
+        return { focusStatus: 'completed' }
+      }
+    }
+    return { focusTimeRemaining: state.focusTimeRemaining - 1 }
+  }),
 }))

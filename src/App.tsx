@@ -7,6 +7,7 @@ import TodoList from './components/TodoList'
 import QuickAddPanel from './components/QuickAddPanel'
 import SettingsModal from './components/SettingsModal'
 import TrashList from './components/TrashList'
+import FocusModal from './components/FocusModal'
 import { fetchWeather } from './utils/weather'
 
 export default function App() {
@@ -108,6 +109,10 @@ export default function App() {
 
         <AnimatePresence>
           {settingsOpen && <SettingsModal onClose={() => setSettingsOpen(false)} />}
+        </AnimatePresence>
+
+        <AnimatePresence>
+          {useStore.getState().focusMode && <FocusModal />}
         </AnimatePresence>
       </div>
     </div>

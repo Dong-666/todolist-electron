@@ -6,7 +6,7 @@ interface TodoItemProps {
 }
 
 export default function TodoItem({ todo }: TodoItemProps) {
-  const { toggleTodo, deleteTodo } = useStore()
+  const { toggleTodo, deleteTodo, startFocus } = useStore()
 
   return (
     <div
@@ -63,6 +63,26 @@ export default function TodoItem({ todo }: TodoItemProps) {
           className={`priority-dot priority-${['high', 'medium', 'low'][todo.priority - 1]}`}
           title={`P${todo.priority}`}
         />
+      )}
+
+      {/* Focus button */}
+      {!todo.completed && (
+        <button
+          onClick={() => startFocus(todo.id)}
+          className="w-7 h-7 rounded-lg flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all"
+          style={{ color: 'var(--text-tertiary)' }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.color = 'var(--accent)'
+            e.currentTarget.style.background = 'var(--accent-soft)'
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.color = 'var(--text-tertiary)'
+            e.currentTarget.style.background = 'transparent'
+          }}
+          title="专注"
+        >
+          🍅
+        </button>
       )}
 
       {/* Delete button - always visible when not completed */}
