@@ -1,16 +1,45 @@
+import { useState, useRef, useEffect } from 'react'
 import { motion } from 'framer-motion'
 import { useStore, Todo } from '../store'
+import ActionButton from './ActionButton'
 
 interface TodoItemProps {
   todo: Todo
 }
 
 export default function TodoItem({ todo }: TodoItemProps) {
-  const { toggleTodo, deleteTodo, startFocus } = useStore()
+  const { toggleTodo, deleteTodo, startFocus, updateTodo } = useStore()
+  const [showPriority, setShowPriority] = useState(false)
+  const [showButtons, setShowButtons] = useState(false)
+  const dropdownRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
+        setShowPriority(false)
+      }
+    }
+    if (showPriority) {
+      document.addEventListener('mousedown', handleClickOutside)
+    }
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [showPriority])
+
+  const priorityOptions: Array<{ value: 1 | 2 | 3 | null; label: string }> = [
+    { value: null, label: '无' },
+    { value: 1, label: '高' },
+    { value: 2, label: '中' },
+    { value: 3, label: '低' },
+  ]
 
   return (
     <div
       className={`todo-item group ${todo.completed ? 'completed' : ''}`}
+      onMouseEnter={() => setShowButtons(true)}
+      onMouseLeave={() => {
+        setShowButtons(false)
+        setShowPriority(false)
+      }}
     >
       {/* Checkbox */}
       <button
@@ -57,56 +86,87 @@ export default function TodoItem({ todo }: TodoItemProps) {
         )}
       </div>
 
-      {/* Priority indicator */}
-      {todo.priority && !todo.completed && (
-        <div
-          className={`priority-dot priority-${['high', 'medium', 'low'][todo.priority - 1]}`}
-          title={`P${todo.priority}`}
-        />
+      {/* Priority selector */}
+      {!todo.completed && (
+        <div className="relative" ref={dropdownRef}>
+          <ActionButton
+            icon={
+              todo.priority ? (
+                <div className={`priority-dot priority-${['high', 'medium', 'low'][todo.priority - 1]}`} />
+              ) : (
+                <span className="text-xs">⚡</span>
+              )
+            }
+            onClick={() => setShowPriority(!showPriority)}
+            color={todo.priority ? `var(--priority-${['high', 'medium', 'low'][todo.priority - 1]})` : 'var(--text-tertiary)'}
+            hoverBg="rgba(59, 130, 246, 0.12)"
+            title="设置优先级"
+            visible={showButtons || !!todo.priority}
+          />
+          {showPriority && (
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: -5 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              className="absolute right-0 top-full mt-1 py-1 rounded-lg shadow-xl z-50 w-28"
+              style={{ background: 'var(--bg-card)', border: '1px solid var(--border)' }}
+            >
+              {priorityOptions.map((opt) => (
+                <button
+                  key={opt.label}
+                  onClick={() => {
+                    updateTodo(todo.id, { priority: opt.value })
+                    setShowPriority(false)
+                  }}
+                  className="w-full px-3 py-1.5 text-xs text-left flex items-center gap-2 transition-colors"
+                  style={{
+                    background: todo.priority === opt.value ? 'rgba(59, 130, 246, 0.12)' : 'transparent',
+                    color: opt.value ? `var(--priority-${['high', 'medium', 'low'][opt.value - 1]})` : 'var(--text-secondary)'
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.background = 'rgba(59, 130, 246, 0.12)'
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.background = todo.priority === opt.value ? 'rgba(59, 130, 246, 0.12)' : 'transparent'
+                  }}
+                >
+                  <div
+                    className={opt.value ? `priority-dot priority-${['high', 'medium', 'low'][opt.value - 1]}` : 'w-2.5 h-2.5 rounded-full opacity-30'}
+                    style={opt.value ? {} : { background: 'var(--text-tertiary)' }}
+                  />
+                  {opt.label}
+                </button>
+              ))}
+            </motion.div>
+          )}
+        </div>
       )}
 
       {/* Focus button */}
       {!todo.completed && (
-        <button
+        <ActionButton
+          icon={<span>🍅</span>}
           onClick={() => startFocus(todo.id)}
-          className="w-7 h-7 rounded-lg flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all"
-          style={{ color: 'var(--text-tertiary)' }}
-          onMouseEnter={(e) => {
-            e.currentTarget.style.color = 'var(--accent)'
-            e.currentTarget.style.background = 'var(--accent-soft)'
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.color = 'var(--text-tertiary)'
-            e.currentTarget.style.background = 'transparent'
-          }}
+          hoverBg="rgba(59, 130, 246, 0.12)"
           title="专注"
-        >
-          🍅
-        </button>
+          visible={showButtons}
+        />
       )}
 
-      {/* Delete button - always visible when not completed */}
+      {/* Delete button */}
       {!todo.completed && (
-        <button
+        <ActionButton
+          icon={
+            <svg width="12" height="12" viewBox="0 0 12 12" stroke="currentColor" strokeWidth="1.5">
+              <line x1="2" y1="2" x2="10" y2="10" />
+              <line x1="10" y1="2" x2="2" y2="10" />
+            </svg>
+          }
           onClick={() => deleteTodo(todo.id)}
-          className="delete-btn"
-          style={{ opacity: 0.6 }}
-          onMouseEnter={(e) => {
-            e.currentTarget.style.opacity = '1'
-            e.currentTarget.style.color = 'var(--priority-high)'
-            e.currentTarget.style.background = 'rgba(248, 113, 113, 0.12)'
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.opacity = '0.6'
-            e.currentTarget.style.color = 'var(--text-tertiary)'
-            e.currentTarget.style.background = 'transparent'
-          }}
-        >
-          <svg width="12" height="12" viewBox="0 0 12 12" stroke="currentColor" strokeWidth="1.5">
-            <line x1="2" y1="2" x2="10" y2="10" />
-            <line x1="10" y1="2" x2="2" y2="10" />
-          </svg>
-        </button>
+          color="var(--priority-high)"
+          hoverBg="rgba(248, 113, 113, 0.12)"
+          title="删除"
+          visible={showButtons}
+        />
       )}
     </div>
   )

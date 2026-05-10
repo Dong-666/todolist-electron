@@ -1,5 +1,6 @@
 import { motion, AnimatePresence } from 'framer-motion'
 import { useStore } from '../store'
+import ActionButton from './ActionButton'
 
 export default function TrashList() {
   const { todos, permanentlyDeleteTodo, permanentlyDeleteAllTrash, restoreTodo, todoLists } = useStore()
@@ -117,26 +118,17 @@ export default function TrashList() {
                   border: '1px solid var(--border)'
                 }}
               >
-                <motion.button
+                <ActionButton
+                  icon={
+                    <svg width="14" height="14" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.5">
+                      <path d="M2 6l3 3 5-5" />
+                    </svg>
+                  }
                   onClick={() => restoreTodo(todo.id)}
-                  onMouseEnter={(e) => {
-                    e.currentTarget.style.opacity = '1'
-                    e.currentTarget.style.background = 'rgba(59, 130, 246, 0.12)'
-                  }}
-                  onMouseLeave={(e) => {
-                    e.currentTarget.style.opacity = '0.6'
-                    e.currentTarget.style.background = 'transparent'
-                  }}
-                  className="w-8 h-8 rounded-lg flex items-center justify-center transition-all"
-                  style={{ color: 'var(--accent)', opacity: 0.6 }}
-                  whileHover={{ scale: 1.1 }}
-                  whileTap={{ scale: 0.9 }}
+                  color="var(--accent)"
+                  hoverBg="rgba(59, 130, 246, 0.12)"
                   title="恢复"
-                >
-                  <svg width="14" height="14" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.5">
-                    <path d="M2 6l3 3 5-5" />
-                  </svg>
-                </motion.button>
+                />
 
                 <div className="flex-1 min-w-0">
                   <p className="text-sm truncate" title={todo.title} style={{ color: 'var(--text-primary)' }}>
@@ -147,31 +139,22 @@ export default function TrashList() {
                   </p>
                 </div>
 
-                <motion.button
+                <ActionButton
+                  icon={
+                    <svg width="14" height="14" viewBox="0 0 12 12" stroke="currentColor" strokeWidth="1.5">
+                      <line x1="2" y1="2" x2="10" y2="10" />
+                      <line x1="10" y1="2" x2="2" y2="10" />
+                    </svg>
+                  }
                   onClick={() => {
                     if (confirm('确定要永久删除这条待办吗？此操作不可恢复。')) {
                       permanentlyDeleteTodo(todo.id)
                     }
                   }}
-                  onMouseEnter={(e) => {
-                    e.currentTarget.style.opacity = '1'
-                    e.currentTarget.style.background = 'rgba(248, 113, 113, 0.12)'
-                  }}
-                  onMouseLeave={(e) => {
-                    e.currentTarget.style.opacity = '0.6'
-                    e.currentTarget.style.background = 'transparent'
-                  }}
-                  className="w-8 h-8 rounded-lg flex items-center justify-center transition-all"
-                  style={{ color: 'var(--priority-high)', opacity: 0.6 }}
-                  whileHover={{ scale: 1.1 }}
-                  whileTap={{ scale: 0.9 }}
+                  color="var(--priority-high)"
+                  hoverBg="rgba(248, 113, 113, 0.12)"
                   title="永久删除"
-                >
-                  <svg width="14" height="14" viewBox="0 0 12 12" stroke="currentColor" strokeWidth="1.5">
-                    <line x1="2" y1="2" x2="10" y2="10" />
-                    <line x1="10" y1="2" x2="2" y2="10" />
-                  </svg>
-                </motion.button>
+                />
               </div>
             </motion.div>
           ))}
