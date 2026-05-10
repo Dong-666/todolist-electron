@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
 import { useStore } from '../store'
 import { syncToGist, syncFromGist, mergeSyncData, initOctokit } from '../utils/github'
+import { setFocusDuration, setBreakDuration, DEFAULT_FOCUS_DURATION, DEFAULT_BREAK_DURATION } from '../utils/pomodoro'
 
 interface SettingsModalProps {
   onClose: () => void
@@ -18,6 +19,8 @@ export default function SettingsModal({ onClose }: SettingsModalProps) {
   const [syncMessage, setSyncMessage] = useState('')
   const [autoSync, setAutoSync] = useState(false)
   const [syncInterval, setSyncInterval] = useState(30)
+  const [focusMinutes, setFocusMinutes] = useState(DEFAULT_FOCUS_DURATION / 60)
+  const [breakMinutes, setBreakMinutes] = useState(DEFAULT_BREAK_DURATION / 60)
 
   useEffect(() => {
     const loadSettings = async () => {
@@ -35,6 +38,10 @@ export default function SettingsModal({ onClose }: SettingsModalProps) {
       setEncryptionKey(savedKey || '')
       setAutoSync(savedAutoSync || false)
       setSyncInterval(savedSyncInterval || 30)
+      const savedFocusMinutes = await window.electronAPI.getStore('focusMinutes') as number
+      const savedBreakMinutes = await window.electronAPI.getStore('breakMinutes') as number
+      if (savedFocusMinutes) setFocusMinutes(savedFocusMinutes)
+      if (savedBreakMinutes) setBreakMinutes(savedBreakMinutes)
       if (savedToken) initOctokit(savedToken)
     }
     loadSettings()
@@ -327,6 +334,58 @@ export default function SettingsModal({ onClose }: SettingsModalProps) {
                   </select>
                 </div>
               )}
+            </div>
+          </div>
+
+          {/* Pomodoro Settings */}
+          <div>
+            <h3 className="text-xs font-semibold uppercase tracking-widest mb-3" style={{ color: 'var(--text-tertiary)' }}>
+              番茄钟
+            </h3>
+            <div className="space-y-3">
+              <div className="flex items-center justify-between p-3 rounded-xl" style={{ background: 'var(--bg-tertiary)' }}>
+                <span className="text-sm font-medium" style={{ color: 'var(--text-secondary)' }}>专注时间</span>
+                <div className="flex items-center gap-2">
+                  <input
+                    type="number"
+                    min="1"
+                    max="60"
+                    value={focusMinutes}
+                    onChange={(e) => setFocusMinutes(parseInt(e.target.value) || 25)}
+                    className="w-16 px-3 py-1.5 rounded-lg text-center text-sm"
+                    style={{ background: 'var(--bg-card)', color: 'var(--text-primary)' }}
+                  />
+                  <span className="text-sm" style={{ color: 'var(--text-tertiary)' }}>分钟</span>
+                </div>
+              </div>
+              <div className="flex items-center justify-between p-3 rounded-xl" style={{ background: 'var(--bg-tertiary)' }}>
+                <span className="text-sm font-medium" style={{ color: 'var(--text-secondary)' }}>休息时间</span>
+                <div className="flex items-center gap-2">
+                  <input
+                    type="number"
+                    min="1"
+                    max="30"
+                    value={breakMinutes}
+                    onChange={(e) => setBreakMinutes(parseInt(e.target.value) || 5)}
+                    className="w-16 px-3 py-1.5 rounded-lg text-center text-sm"
+                    style={{ background: 'var(--bg-card)', color: 'var(--text-primary)' }}
+                  />
+                  <span className="text-sm" style={{ color: 'var(--text-tertiary)' }}>分钟</span>
+                </div>
+              </div>
+              <button
+                onClick={() => {
+                  setFocusDuration(focusMinutes)
+                  setBreakDuration(breakMinutes)
+                  window.electronAPI.setStore('focusMinutes', focusMinutes)
+                  window.electronAPI.setStore('breakMinutes', breakMinutes)
+                  setSyncMessage('番茄钟设置已保存')
+                  setTimeout(() => setSyncMessage(''), 2000)
+                }}
+                className="btn-ghost w-full"
+              >
+                保存设置
+              </button>
             </div>
           </div>
         </div>

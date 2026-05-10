@@ -1,7 +1,7 @@
 import { useEffect, useRef } from 'react'
 import { motion } from 'framer-motion'
 import { useStore } from '../store'
-import { FOCUS_DURATION, BREAK_DURATION } from '../utils/pomodoro'
+import { getFocusDuration, getBreakDuration } from '../utils/pomodoro'
 
 export default function FocusModal() {
   const { focusMode, focusTodoId, focusTimeRemaining, focusStatus, todos, pauseFocus, resumeFocus, endFocus, tickFocus } = useStore()
@@ -22,9 +22,9 @@ export default function FocusModal() {
 
   useEffect(() => {
     if (focusTimeRemaining === 0 && focusStatus === 'break') {
-      new window.Notification('🍅 休息结束', { body: `${BREAK_DURATION / 60}分钟休息已结束，准备开始下一轮专注` })
+      new window.Notification('🍅 休息结束', { body: `${getBreakDuration() / 60}分钟休息已结束，准备开始下一轮专注` })
     } else if (focusTimeRemaining === 0 && focusStatus === 'working') {
-      new window.Notification('🍅 专注完成', { body: `${FOCUS_DURATION / 60}分钟专注结束！休息一下吧` })
+      new window.Notification('🍅 专注完成', { body: `${getFocusDuration() / 60}分钟专注结束！休息一下吧` })
     }
   }, [focusTimeRemaining, focusStatus])
 
@@ -55,6 +55,9 @@ export default function FocusModal() {
   const handleClose = () => {
     endFocus()
   }
+
+  const FOCUS_DURATION = getFocusDuration()
+  const BREAK_DURATION = getBreakDuration()
 
   const progress = focusStatus === 'working'
     ? ((FOCUS_DURATION - focusTimeRemaining) / FOCUS_DURATION) * 100

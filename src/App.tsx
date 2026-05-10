@@ -9,6 +9,7 @@ import SettingsModal from './components/SettingsModal'
 import TrashList from './components/TrashList'
 import FocusModal from './components/FocusModal'
 import { fetchWeather } from './utils/weather'
+import { setFocusDuration, setBreakDuration } from './utils/pomodoro'
 
 export default function App() {
   const { theme, setTheme, quickAddOpen, setQuickAddOpen, setLastSyncTime, setSyncStatus, weather, setWeather } = useStore()
@@ -23,6 +24,11 @@ export default function App() {
 
       const weatherData = await fetchWeather()
       setWeather(weatherData)
+
+      const savedFocusMinutes = await window.electronAPI.getStore('focusMinutes') as number
+      const savedBreakMinutes = await window.electronAPI.getStore('breakMinutes') as number
+      if (savedFocusMinutes) setFocusDuration(savedFocusMinutes)
+      if (savedBreakMinutes) setBreakDuration(savedBreakMinutes)
 
       setReady(true)
     }

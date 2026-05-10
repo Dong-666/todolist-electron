@@ -1,6 +1,6 @@
 import { create } from 'zustand'
 import { WeatherData } from '../utils/weather'
-import { FOCUS_DURATION, BREAK_DURATION } from '../utils/pomodoro'
+import { getFocusDuration, getBreakDuration } from '../utils/pomodoro'
 
 export interface Todo {
   id: string
@@ -189,7 +189,7 @@ export const useStore = create<StoreState>((set) => ({
   setWeather: (weather) => set({ weather }),
   focusMode: false,
   focusTodoId: null,
-  focusTimeRemaining: FOCUS_DURATION,
+  focusTimeRemaining: getFocusDuration(),
   focusStatus: 'idle',
   setFocusMode: (mode) => set({ focusMode: mode }),
   setFocusTodoId: (id) => set({ focusTodoId: id }),
@@ -198,7 +198,7 @@ export const useStore = create<StoreState>((set) => ({
   startFocus: (todoId) => set({
     focusMode: true,
     focusTodoId: todoId,
-    focusTimeRemaining: FOCUS_DURATION,
+    focusTimeRemaining: getFocusDuration(),
     focusStatus: 'working'
   }),
   focusPreviousStatus: null,
@@ -212,13 +212,13 @@ export const useStore = create<StoreState>((set) => ({
   endFocus: () => set({
     focusMode: false,
     focusTodoId: null,
-    focusTimeRemaining: FOCUS_DURATION,
+    focusTimeRemaining: getFocusDuration(),
     focusStatus: 'idle'
   }),
   tickFocus: () => set((state) => {
     if (state.focusTimeRemaining <= 0) {
       if (state.focusStatus === 'working') {
-        return { focusStatus: 'break', focusTimeRemaining: BREAK_DURATION }
+        return { focusStatus: 'break', focusTimeRemaining: getBreakDuration() }
       } else if (state.focusStatus === 'break') {
         return { focusStatus: 'completed' }
       }
