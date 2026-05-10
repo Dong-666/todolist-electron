@@ -38,15 +38,15 @@ export function getWeatherIcon(code: number): string {
 export async function fetchWeather(): Promise<WeatherData | null> {
   try {
     // Step 1: Get location from IP
-    const geoRes = await fetch('https://ipapi.co/json/')
+    const geoRes = await fetch('http://ip-api.com/json/')
     if (!geoRes.ok) return null
     const geo = await geoRes.json()
 
-    const { latitude, longitude, city } = geo
-    if (!latitude || !longitude) return null
+    const { lat, lon, city } = geo
+    if (!lat || !lon) return null
 
     // Step 2: Get weather from Open-Meteo
-    const weatherUrl = `https://api.open-meteo.com/v1/forecast?latitude=${latitude}&longitude=${longitude}&current_weather=true`
+    const weatherUrl = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current_weather=true`
     const weatherRes = await fetch(weatherUrl)
     if (!weatherRes.ok) return null
     const weather = await weatherRes.json()

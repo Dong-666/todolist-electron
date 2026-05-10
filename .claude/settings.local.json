@@ -13,7 +13,8 @@
       "Bash(taskkill //F //IM node.exe)",
       "Bash(netstat -ano)",
       "Bash(tasklist)",
-      "Bash(curl http://localhost:5173)"
+      "Bash(curl http://localhost:5173)",
+      "mcp__MiniMax__web_search"
     ]
   }
 }
