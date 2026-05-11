@@ -61,8 +61,7 @@ export default function Sidebar() {
                   <span className="text-sm font-medium">{list.name}</span>
                 </button>
 
-                {list.type === 'custom' && (
-                  <button
+                <button
                     onClick={(e) => handleDeleteList(e, list.id)}
                     className="absolute right-2 top-1/2 -translate-y-1/2 w-6 h-6 rounded flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all"
                     style={{ color: 'var(--text-tertiary)' }}
@@ -80,7 +79,6 @@ export default function Sidebar() {
                       <line x1="8" y1="2" x2="2" y2="8" />
                     </svg>
                   </button>
-                )}
               </motion.div>
             ))}
           </AnimatePresence>
