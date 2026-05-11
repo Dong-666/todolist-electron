@@ -3,7 +3,7 @@ import { WeatherData, getWeatherIcon } from '../utils/weather'
 
 interface TitleBarProps {
   onSettingsClick: () => void
-  theme?: 'light' | 'dark'
+  theme?: 'light' | 'dark' | 'system'
   weather?: WeatherData | null
 }
 

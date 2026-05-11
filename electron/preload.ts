@@ -14,6 +14,9 @@ contextBridge.exposeInMainWorld('electronAPI', {
   onAutoSyncTrigger: (callback: () => void) => {
     ipcRenderer.on('auto-sync-trigger', () => callback())
   },
+  onInitialSync: (callback: () => void) => {
+    ipcRenderer.on('initial-sync', () => callback())
+  },
   getStore: (key: string) => ipcRenderer.invoke('get-store', key),
   setStore: (key: string, value: unknown) => ipcRenderer.invoke('set-store', key, value),
   registerShortcut: (action: string, shortcut: string) =>

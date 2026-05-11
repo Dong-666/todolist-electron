@@ -203,6 +203,11 @@ app.whenReady().then(() => {
   const autoSyncEnabled = store.get('autoSync', false) as boolean
   const autoSyncInterval = store.get('syncInterval', 30) as number
   setupAutoSync(autoSyncEnabled, autoSyncInterval)
+
+  // Trigger initial sync after window is ready
+  setTimeout(() => {
+    mainWindow?.webContents.send('initial-sync')
+  }, 1000)
 })
 
 app.on('window-all-closed', () => {

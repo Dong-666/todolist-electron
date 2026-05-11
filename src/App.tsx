@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { motion, AnimatePresence } from 'framer-motion'
+import { AnimatePresence } from 'framer-motion'
 import { useStore } from './store'
 import TitleBar from './components/TitleBar'
 import Sidebar from './components/Sidebar'
@@ -12,12 +12,20 @@ import { fetchWeather } from './utils/weather'
 import { setFocusDuration, setBreakDuration } from './utils/pomodoro'
 
 export default function App() {
-  const { theme, setTheme, quickAddOpen, setQuickAddOpen, setLastSyncTime, setSyncStatus, weather, setWeather } = useStore()
+  const { theme, setTheme, quickAddOpen, setQuickAddOpen, setLastSyncTime, setSyncStatus, weather, setWeather, setTodos, setTodoLists, setTags } = useStore()
   const [settingsOpen, setSettingsOpen] = useState(false)
   const [ready, setReady] = useState(false)
 
   useEffect(() => {
     const initApp = async () => {
+      // 1. 先加载本地持久化数据
+      const savedTodos = await window.electronAPI.getStore('todos') as any[]
+      const savedLists = await window.electronAPI.getStore('todoLists') as any[]
+      const savedTags = await window.electronAPI.getStore('tags') as any[]
+      if (savedTodos) setTodos(savedTodos)
+      if (savedLists) setTodoLists(savedLists)
+      if (savedTags) setTags(savedTags)
+
       const systemTheme = await window.electronAPI.getTheme()
       const savedTheme = await window.electronAPI.getStore('theme') as 'light' | 'dark' | 'system' | undefined
       setTheme(savedTheme || systemTheme)
@@ -75,7 +83,42 @@ export default function App() {
         setSyncStatus('error')
       }
     })
-  }, [setTheme, setQuickAddOpen, setLastSyncTime, setSyncStatus, setWeather])
+
+    window.electronAPI.onInitialSync(async () => {
+      const token = await window.electronAPI.getStore('githubToken') as string
+      const gistId = await window.electronAPI.getStore('gistId') as string
+      const key = await window.electronAPI.getStore('encryptionKey') as string
+      if (!token || !gistId || !key) return
+
+      setSyncStatus('syncing')
+      const { syncFromGist, mergeSyncData, initOctokit, syncToGist } = await import('./utils/github')
+      initOctokit(token)
+
+      const remote = await syncFromGist(gistId, key)
+      if (!remote.success) {
+        setSyncStatus('error')
+        return
+      }
+
+      const { todos, todoLists, tags, tombstones, setTodos, setTodoLists, setTags } = useStore.getState()
+      const local = { todos, lists: todoLists, tags, updatedAt: Date.now() }
+      const merged = mergeSyncData(local, remote.data || local, tombstones)
+
+      // Apply merged data to local store
+      if (merged.todos) setTodos(merged.todos)
+      if (merged.lists) setTodoLists(merged.lists)
+      if (merged.tags) setTags(merged.tags)
+
+      const result = await syncToGist(gistId, key, merged)
+
+      if (result.success) {
+        setLastSyncTime(Date.now())
+        setSyncStatus('idle')
+      } else {
+        setSyncStatus('error')
+      }
+    })
+  }, [setTheme, setQuickAddOpen, setLastSyncTime, setSyncStatus, setWeather, setTodos, setTodoLists, setTags])
 
   useEffect(() => {
     const isDark = theme === 'dark'

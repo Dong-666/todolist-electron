@@ -106,12 +106,17 @@ export const useStore = create<StoreState>((set) => ({
   todoLists: defaultLists,
   activeListId: 'default',
   setActiveListId: (id) => set({ activeListId: id }),
-  addList: (list) => set((state) => ({
-    todoLists: [...state.todoLists, { ...list, id: Date.now().toString(), createdAt: Date.now() }]
-  })),
-  updateList: (id, updates) => set((state) => ({
-    todoLists: state.todoLists.map(l => l.id === id ? { ...l, ...updates } : l)
-  })),
+  addList: (list) => set((state) => {
+    const newList = { ...list, id: Date.now().toString(), createdAt: Date.now() }
+    const newLists = [...state.todoLists, newList]
+    window.electronAPI.setStore('todoLists', newLists)
+    return { todoLists: newLists }
+  }),
+  updateList: (id, updates) => set((state) => {
+    const newLists = state.todoLists.map(l => l.id === id ? { ...l, ...updates } : l)
+    window.electronAPI.setStore('todoLists', newLists)
+    return { todoLists: newLists }
+  }),
   deleteList: (id) => set((state) => {
     const listTodos = state.todos.filter(t => t.listId === id)
     const activeCount = listTodos.filter(t => !t.deletedAt).length
@@ -122,55 +127,81 @@ export const useStore = create<StoreState>((set) => ({
       if (!confirm(msg)) return state
     }
 
+    const newLists = state.todoLists.filter(l => l.id !== id)
+    const newTodos = state.todos.filter(t => t.listId !== id)
+    window.electronAPI.setStore('todoLists', newLists)
+    window.electronAPI.setStore('todos', newTodos)
     return {
-      todoLists: state.todoLists.filter(l => l.id !== id),
-      todos: state.todos.filter(t => t.listId !== id),
+      todoLists: newLists,
+      todos: newTodos,
       activeListId: state.activeListId === id ? 'default' : state.activeListId
     }
   }),
   todos: [],
-  addTodo: (todo) => set((state) => ({
-    todos: [...state.todos, {
+  addTodo: (todo) => set((state) => {
+    const newTodo = {
       ...todo,
       id: Date.now().toString(),
       createdAt: Date.now(),
       updatedAt: Date.now(),
       deletedAt: null
-    }]
-  })),
-  updateTodo: (id, updates) => set((state) => ({
-    todos: state.todos.map(t => t.id === id ? { ...t, ...updates, updatedAt: Date.now() } : t)
-  })),
-  deleteTodo: (id) => set((state) => ({
-    todos: state.todos.map(t => t.id === id ? { ...t, deletedAt: Date.now() } : t)
-  })),
-  permanentlyDeleteTodo: (id) => set((state) => ({
-    todos: state.todos.filter(t => t.id !== id),
-    tombstones: [...state.tombstones, id]
-  })),
+    }
+    const newTodos = [...state.todos, newTodo]
+    window.electronAPI.setStore('todos', newTodos)
+    return { todos: newTodos }
+  }),
+  updateTodo: (id, updates) => set((state) => {
+    const newTodos = state.todos.map(t => t.id === id ? { ...t, ...updates, updatedAt: Date.now() } : t)
+    window.electronAPI.setStore('todos', newTodos)
+    return { todos: newTodos }
+  }),
+  deleteTodo: (id) => set((state) => {
+    const newTodos = state.todos.map(t => t.id === id ? { ...t, deletedAt: Date.now() } : t)
+    window.electronAPI.setStore('todos', newTodos)
+    return { todos: newTodos }
+  }),
+  permanentlyDeleteTodo: (id) => set((state) => {
+    const newTodos = state.todos.filter(t => t.id !== id)
+    const newTombstones = [...state.tombstones, id]
+    window.electronAPI.setStore('todos', newTodos)
+    window.electronAPI.setStore('tombstones', newTombstones)
+    return { todos: newTodos, tombstones: newTombstones }
+  }),
   permanentlyDeleteAllTrash: () => set((state) => {
     const deletedIds = state.todos.filter(t => t.deletedAt).map(t => t.id)
-    return {
-      todos: state.todos.filter(t => !t.deletedAt),
-      tombstones: [...state.tombstones, ...deletedIds]
-    }
+    const newTodos = state.todos.filter(t => !t.deletedAt)
+    const newTombstones = [...state.tombstones, ...deletedIds]
+    window.electronAPI.setStore('todos', newTodos)
+    window.electronAPI.setStore('tombstones', newTombstones)
+    return { todos: newTodos, tombstones: newTombstones }
   }),
-  restoreTodo: (id) => set((state) => ({
-    todos: state.todos.map(t => t.id === id ? { ...t, deletedAt: null } : t)
-  })),
-  toggleTodo: (id) => set((state) => ({
-    todos: state.todos.map(t => t.id === id ? { ...t, completed: !t.completed, updatedAt: Date.now() } : t)
-  })),
+  restoreTodo: (id) => set((state) => {
+    const newTodos = state.todos.map(t => t.id === id ? { ...t, deletedAt: null } : t)
+    window.electronAPI.setStore('todos', newTodos)
+    return { todos: newTodos }
+  }),
+  toggleTodo: (id) => set((state) => {
+    const newTodos = state.todos.map(t => t.id === id ? { ...t, completed: !t.completed, updatedAt: Date.now() } : t)
+    window.electronAPI.setStore('todos', newTodos)
+    return { todos: newTodos }
+  }),
   tags: [],
-  addTag: (tag) => set((state) => ({
-    tags: [...state.tags, { ...tag, id: Date.now().toString() }]
-  })),
-  updateTag: (id, updates) => set((state) => ({
-    tags: state.tags.map(t => t.id === id ? { ...t, ...updates } : t)
-  })),
-  deleteTag: (id) => set((state) => ({
-    tags: state.tags.filter(t => t.id !== id)
-  })),
+  addTag: (tag) => set((state) => {
+    const newTag = { ...tag, id: Date.now().toString() }
+    const newTags = [...state.tags, newTag]
+    window.electronAPI.setStore('tags', newTags)
+    return { tags: newTags }
+  }),
+  updateTag: (id, updates) => set((state) => {
+    const newTags = state.tags.map(t => t.id === id ? { ...t, ...updates } : t)
+    window.electronAPI.setStore('tags', newTags)
+    return { tags: newTags }
+  }),
+  deleteTag: (id) => set((state) => {
+    const newTags = state.tags.filter(t => t.id !== id)
+    window.electronAPI.setStore('tags', newTags)
+    return { tags: newTags }
+  }),
   quickAddOpen: false,
   setQuickAddOpen: (open) => set({ quickAddOpen: open }),
   filter: { status: 'all', priority: null, tagId: null },
@@ -179,9 +210,18 @@ export const useStore = create<StoreState>((set) => ({
   setSyncStatus: (status) => set({ syncStatus: status }),
   lastSyncTime: null,
   setLastSyncTime: (time) => set({ lastSyncTime: time }),
-  setTodos: (todos) => set({ todos }),
-  setTodoLists: (todoLists) => set({ todoLists }),
-  setTags: (tags) => set({ tags }),
+  setTodos: (todos) => {
+    window.electronAPI.setStore('todos', todos)
+    set({ todos })
+  },
+  setTodoLists: (todoLists) => {
+    window.electronAPI.setStore('todoLists', todoLists)
+    set({ todoLists })
+  },
+  setTags: (tags) => {
+    window.electronAPI.setStore('tags', tags)
+    set({ tags })
+  },
   tombstones: [],
   addTombstone: (id) => set((state) => ({ tombstones: [...state.tombstones, id] })),
   clearTombstones: () => set({ tombstones: [] }),

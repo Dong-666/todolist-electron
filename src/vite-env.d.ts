@@ -7,6 +7,8 @@ interface ElectronAPI {
   getTheme: () => Promise<'light' | 'dark'>
   onThemeChanged: (callback: (theme: string) => void) => void
   onOpenQuickAdd: (callback: () => void) => void
+  onAutoSyncTrigger: (callback: () => void) => void
+  onInitialSync: (callback: () => void) => void
   getStore: (key: string) => Promise<unknown>
   setStore: (key: string, value: unknown) => Promise<void>
   registerShortcut: (action: string, shortcut: string) => Promise<{ success: boolean; error?: string }>
