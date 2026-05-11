@@ -21,7 +21,8 @@ export async function syncToGist(gistId: string, encryptionKey: string, data: Sy
   try {
     const { tombstones } = useStore.getState()
     const filteredTodos = data.todos.filter(t => !tombstones.includes(t.id))
-    const jsonData = JSON.stringify({ ...data, todos: filteredTodos })
+    const filteredLists = data.lists.filter(l => !tombstones.includes(l.id))
+    const jsonData = JSON.stringify({ ...data, todos: filteredTodos, lists: filteredLists })
     const encrypted = await encrypt(jsonData, encryptionKey)
 
     await octokit.gists.update({
@@ -87,7 +88,7 @@ export function mergeSyncData(local: SyncData, remote: SyncData, tombstones: str
       const existing = merged.get(l.id)
       if (!existing || (l as any).updatedAt > (existing as any).updatedAt) merged.set(l.id, l)
     }
-    return Array.from(merged.values())
+    return Array.from(merged.values()).filter(l => !tombstones.includes(l.id))
   }
 
   const mergeTags = (localTags: Tag[], remoteTags: Tag[]): Tag[] => {

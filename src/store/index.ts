@@ -21,6 +21,7 @@ export interface TodoList {
   icon: string
   color: string
   createdAt: number
+  updatedAt?: number
 }
 
 export interface Tag {
@@ -134,6 +135,7 @@ export const useStore = create<StoreState>((set) => ({
     return {
       todoLists: newLists,
       todos: newTodos,
+      tombstones: [...state.tombstones, id],
       activeListId: state.activeListId === id ? 'default' : state.activeListId
     }
   }),
