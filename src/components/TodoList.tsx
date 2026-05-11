@@ -17,6 +17,9 @@ export default function TodoList() {
       return true
     })
     .sort((a, b) => {
+      // 已完成的放到最后
+      if (a.completed !== b.completed) return a.completed ? 1 : -1
+      // 未完成的按优先级排序（高优先级在前）
       if (a.priority && b.priority) return a.priority - b.priority
       if (a.priority) return -1
       if (b.priority) return 1
