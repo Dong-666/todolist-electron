@@ -8,13 +8,14 @@ import QuickAddPanel from './components/QuickAddPanel'
 import SettingsModal from './components/SettingsModal'
 import TrashList from './components/TrashList'
 import FocusModal from './components/FocusModal'
+import LoadingScreen from './components/LoadingScreen'
 import { fetchWeather } from './utils/weather'
 import { setFocusDuration, setBreakDuration } from './utils/pomodoro'
 
 export default function App() {
   const { theme, setTheme, quickAddOpen, setQuickAddOpen, setLastSyncTime, setSyncStatus, weather, setWeather, setTodos, setTodoLists, setTags } = useStore()
   const [settingsOpen, setSettingsOpen] = useState(false)
-  const [ready, setReady] = useState(false)
+  const [showLoader, setShowLoader] = useState(true)
 
   useEffect(() => {
     const initApp = async () => {
@@ -38,7 +39,10 @@ export default function App() {
       if (savedFocusMinutes) setFocusDuration(savedFocusMinutes)
       if (savedBreakMinutes) setBreakDuration(savedBreakMinutes)
 
-      setReady(true)
+      // 显示加载动画至少1秒，让用户看到品牌
+      setTimeout(() => {
+        setShowLoader(false)
+      }, 1200)
     }
     initApp()
 
@@ -125,10 +129,8 @@ export default function App() {
     document.documentElement.classList.toggle('light', !isDark)
   }, [theme])
 
-  if (!ready) {
-    return (
-      <div className="h-screen w-screen overflow-hidden relative" style={{ background: 'var(--bg-primary)' }} />
-    )
+  if (showLoader) {
+    return <LoadingScreen />
   }
 
   const activeListId = useStore.getState().activeListId
