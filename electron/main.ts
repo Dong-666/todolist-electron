@@ -124,6 +124,16 @@ ipcMain.on('window-maximize', () => {
 })
 ipcMain.on('window-close', () => mainWindow?.hide())
 
+ipcMain.on('show-window', () => {
+  if (mainWindow) {
+    if (mainWindow.isMinimized()) mainWindow.restore()
+    mainWindow.show()
+    mainWindow.focus()
+    mainWindow.setAlwaysOnTop(true)
+    setTimeout(() => mainWindow?.setAlwaysOnTop(false), 3000)
+  }
+})
+
 ipcMain.handle('get-store', (_event, key: string) => store.get(key))
 ipcMain.handle('set-store', (_event, key: string, value: unknown) => store.set(key, value))
 

@@ -46,6 +46,7 @@ export default function FocusModal() {
       new window.Notification('🍅 休息结束', { body: `${getBreakDuration() / 60}分钟休息已结束，准备开始下一轮专注` })
     } else if (focusTimeRemaining === 0 && focusStatus === 'working') {
       new window.Notification('🍅 专注完成', { body: `${getFocusDuration() / 60}分钟专注结束！休息一下吧` })
+      ;(window as any).electronAPI?.showWindow()
     }
   }, [focusTimeRemaining, focusStatus])
 

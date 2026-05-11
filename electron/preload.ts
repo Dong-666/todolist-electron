@@ -33,4 +33,5 @@ contextBridge.exposeInMainWorld('electronAPI', {
   },
   setFocusTimer: (enabled: boolean) =>
     ipcRenderer.invoke('set-focus-timer', enabled),
+  showWindow: () => ipcRenderer.send('show-window'),
 })
