@@ -26,4 +26,11 @@ contextBridge.exposeInMainWorld('electronAPI', {
   getAutoSync: () => ipcRenderer.invoke('get-auto-sync'),
   setAutoSync: (enabled: boolean, interval: number) =>
     ipcRenderer.invoke('set-auto-sync', enabled, interval),
+  onFocusTimerTick: (callback: () => void) => {
+    const handler = () => callback()
+    ipcRenderer.on('focus-timer-tick', handler)
+    return () => ipcRenderer.removeListener('focus-timer-tick', handler)
+  },
+  setFocusTimer: (enabled: boolean) =>
+    ipcRenderer.invoke('set-focus-timer', enabled),
 })

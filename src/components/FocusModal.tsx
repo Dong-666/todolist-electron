@@ -5,20 +5,41 @@ import { getFocusDuration, getBreakDuration } from '../utils/pomodoro'
 
 export default function FocusModal() {
   const { focusMode, focusTodoId, focusTimeRemaining, focusStatus, todos, pauseFocus, resumeFocus, endFocus, tickFocus } = useStore()
-  const intervalRef = useRef<number | null>(null)
+  const hasStartedTimerRef = useRef(false)
+  const tickFocusRef = useRef(tickFocus)
+
+  useEffect(() => {
+    tickFocusRef.current = tickFocus
+  }, [tickFocus])
 
   const todo = todos.find(t => t.id === focusTodoId)
 
   useEffect(() => {
-    if (focusMode && focusStatus === 'working' || focusStatus === 'break') {
-      intervalRef.current = window.setInterval(() => {
-        tickFocus()
-      }, 1000)
+    const shouldRun = focusMode && (focusStatus === 'working' || focusStatus === 'break')
+    if (shouldRun && !hasStartedTimerRef.current) {
+      ;(window as any).electronAPI?.setFocusTimer(true)
+      hasStartedTimerRef.current = true
+    } else if (!shouldRun && hasStartedTimerRef.current) {
+      ;(window as any).electronAPI?.setFocusTimer(false)
+      hasStartedTimerRef.current = false
     }
+  }, [focusMode, focusStatus])
+
+  useEffect(() => {
+    const cleanup = (window as any).electronAPI?.onFocusTimerTick(() => {
+      tickFocusRef.current()
+    })
+    return cleanup
+  }, [])
+
+  useEffect(() => {
     return () => {
-      if (intervalRef.current) clearInterval(intervalRef.current)
+      if (hasStartedTimerRef.current) {
+        ;(window as any).electronAPI?.setFocusTimer(false)
+        hasStartedTimerRef.current = false
+      }
     }
-  }, [focusMode, focusStatus, tickFocus])
+  }, [])
 
   useEffect(() => {
     if (focusTimeRemaining === 0 && focusStatus === 'break') {

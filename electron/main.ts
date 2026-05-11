@@ -17,6 +17,8 @@ let mainWindow: BrowserWindow | null = null
 let tray: Tray | null = null
 let isQuitting = false
 let autoSyncInterval: NodeJS.Timeout | null = null
+let focusTimerInterval: NodeJS.Timeout | null = null
+let isFocusTimerRunning = false
 
 const VITE_DEV_SERVER_URL = process.env.VITE_DEV_SERVER_URL
 const isDev = !!VITE_DEV_SERVER_URL
@@ -173,6 +175,29 @@ ipcMain.handle('set-auto-sync', (_event, enabled: boolean, interval: number) => 
   store.set('syncInterval', interval)
   setupAutoSync(enabled, interval)
   return { success: true }
+})
+
+function setupFocusTimer(enabled: boolean) {
+  if (focusTimerInterval) {
+    clearInterval(focusTimerInterval)
+    focusTimerInterval = null
+  }
+
+  if (enabled) {
+    focusTimerInterval = setInterval(() => {
+      mainWindow?.webContents.send('focus-timer-tick')
+    }, 1000)
+  }
+  isFocusTimerRunning = enabled
+}
+
+ipcMain.handle('set-focus-timer', (_event, enabled: boolean) => {
+  setupFocusTimer(enabled)
+  return { success: true }
+})
+
+ipcMain.handle('get-focus-timer-status', () => {
+  return { running: isFocusTimerRunning }
 })
 
 function setupAutoSync(enabled: boolean, intervalMinutes: number) {
