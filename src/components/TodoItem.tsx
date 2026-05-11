@@ -11,7 +11,31 @@ export default function TodoItem({ todo }: TodoItemProps) {
   const { toggleTodo, deleteTodo, startFocus, updateTodo } = useStore()
   const [showPriority, setShowPriority] = useState(false)
   const [showButtons, setShowButtons] = useState(false)
+  const [isEditingTitle, setIsEditingTitle] = useState(false)
+  const [titleDraft, setTitleDraft] = useState(todo.title)
   const dropdownRef = useRef<HTMLDivElement>(null)
+
+  const handleTitleDoubleClick = () => {
+    setTitleDraft(todo.title)
+    setIsEditingTitle(true)
+  }
+
+  const handleTitleSave = () => {
+    if (titleDraft.trim() && titleDraft !== todo.title) {
+      updateTodo(todo.id, { title: titleDraft.trim() })
+    }
+    setIsEditingTitle(false)
+  }
+
+  const handleTitleCancel = () => {
+    setTitleDraft(todo.title)
+    setIsEditingTitle(false)
+  }
+
+  const handleTitleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter') handleTitleSave()
+    if (e.key === 'Escape') handleTitleCancel()
+  }
 
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
@@ -55,16 +79,30 @@ export default function TodoItem({ todo }: TodoItemProps) {
 
       {/* Content */}
       <div className="flex-1 min-w-0">
-        <p
-          className="text-sm truncate"
-          title={todo.title}
-          style={{
-            textDecoration: todo.completed ? 'line-through' : 'none',
-            color: todo.completed ? 'var(--text-tertiary)' : 'var(--text-primary)'
-          }}
-        >
-          {todo.title}
-        </p>
+        {isEditingTitle ? (
+          <input
+            type="text"
+            value={titleDraft}
+            onChange={(e) => setTitleDraft(e.target.value)}
+            onKeyDown={handleTitleKeyDown}
+            onBlur={handleTitleSave}
+            className="input-field w-full text-sm"
+            autoFocus
+            onClick={(e) => e.stopPropagation()}
+          />
+        ) : (
+          <p
+            className="text-sm truncate cursor-text"
+            title={todo.title}
+            onDoubleClick={handleTitleDoubleClick}
+            style={{
+              textDecoration: todo.completed ? 'line-through' : 'none',
+              color: todo.completed ? 'var(--text-tertiary)' : 'var(--text-primary)'
+            }}
+          >
+            {todo.title}
+          </p>
+        )}
         {todo.tags.length > 0 && (
           <div className="flex gap-1.5 mt-2">
             {todo.tags.map(tagId => {

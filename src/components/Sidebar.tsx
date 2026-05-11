@@ -3,10 +3,12 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { useStore } from '../store'
 
 export default function Sidebar() {
-  const { todoLists, activeListId, setActiveListId, addList, deleteList, todos } = useStore()
+  const { todoLists, activeListId, setActiveListId, addList, deleteList, todos, updateList } = useStore()
   const [isCreating, setIsCreating] = useState(false)
   const [newListName, setNewListName] = useState('')
   const [selectedIcon, setSelectedIcon] = useState('📝')
+  const [editingListId, setEditingListId] = useState<string | null>(null)
+  const [listNameDraft, setListNameDraft] = useState('')
 
   const deletedCount = todos.filter(t => t.deletedAt).length
 
@@ -22,6 +24,30 @@ export default function Sidebar() {
   const handleDeleteList = (e: React.MouseEvent, listId: string) => {
     e.stopPropagation()
     deleteList(listId)
+  }
+
+  const handleListDoubleClick = (listId: string, currentName: string) => {
+    setEditingListId(listId)
+    setListNameDraft(currentName)
+  }
+
+  const handleListSave = () => {
+    if (editingListId && listNameDraft.trim()) {
+      const list = todoLists.find(l => l.id === editingListId)
+      if (list && listNameDraft.trim() !== list.name) {
+        updateList(editingListId, { name: listNameDraft.trim() })
+      }
+    }
+    setEditingListId(null)
+  }
+
+  const handleListCancel = () => {
+    setEditingListId(null)
+  }
+
+  const handleListKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter') handleListSave()
+    if (e.key === 'Escape') handleListCancel()
   }
 
   return (
@@ -58,7 +84,30 @@ export default function Sidebar() {
                   className={`sidebar-item w-full ${activeListId === list.id ? 'active' : ''}`}
                 >
                   <span className="text-lg">{list.icon}</span>
-                  <span className="text-sm font-medium">{list.name}</span>
+                  {editingListId === list.id ? (
+                    <div className="flex-1 pr-8">
+                      <input
+                        type="text"
+                        value={listNameDraft}
+                        onChange={(e) => setListNameDraft(e.target.value)}
+                        onKeyDown={handleListKeyDown}
+                        onBlur={handleListSave}
+                        onClick={(e) => e.stopPropagation()}
+                        className="input-field w-full text-sm h-8"
+                        autoFocus
+                      />
+                    </div>
+                  ) : (
+                    <span
+                      className="text-sm font-medium truncate cursor-text"
+                      onDoubleClick={(e) => {
+                        e.stopPropagation()
+                        handleListDoubleClick(list.id, list.name)
+                      }}
+                    >
+                      {list.name}
+                    </span>
+                  )}
                 </button>
 
                 <button
