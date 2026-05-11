@@ -57,25 +57,38 @@ export default function TodoItem({ todo }: TodoItemProps) {
   ]
 
   return (
-    <div
+    <motion.div
       className={`todo-item group ${todo.completed ? 'completed' : ''}`}
       onMouseEnter={() => setShowButtons(true)}
       onMouseLeave={() => {
         setShowButtons(false)
         setShowPriority(false)
       }}
+      layout
+      initial={false}
+      animate={{
+        opacity: todo.completed ? 0.65 : 1,
+      }}
+      transition={{ duration: 0.3 }}
     >
       {/* Checkbox */}
-      <button
+      <motion.button
         onClick={() => toggleTodo(todo.id)}
         className={`checkbox ${todo.completed ? 'checked' : ''}`}
+        whileTap={{ scale: 0.85 }}
+        whileHover={{ scale: 1.1 }}
+        transition={{ type: 'spring', stiffness: 400, damping: 25 }}
       >
-        {todo.completed && (
+        <motion.div
+          initial={false}
+          animate={todo.completed ? { scale: 1, opacity: 1 } : { scale: 0, opacity: 0 }}
+          transition={{ duration: 0.2, ease: 'easeOut' }}
+        >
           <svg width="11" height="11" viewBox="0 0 11 11" fill="none" stroke="white" strokeWidth="2">
             <polyline points="1.5,5.5 4.5,8.5 9.5,2.5" />
           </svg>
-        )}
-      </button>
+        </motion.div>
+      </motion.button>
 
       {/* Content */}
       <div className="flex-1 min-w-0">
@@ -91,17 +104,19 @@ export default function TodoItem({ todo }: TodoItemProps) {
             onClick={(e) => e.stopPropagation()}
           />
         ) : (
-          <p
+          <motion.p
             className="text-sm truncate cursor-text"
             title={todo.title}
             onDoubleClick={handleTitleDoubleClick}
-            style={{
+            animate={{
               textDecoration: todo.completed ? 'line-through' : 'none',
-              color: todo.completed ? 'var(--text-tertiary)' : 'var(--text-primary)'
+              color: todo.completed ? 'var(--text-tertiary)' : 'var(--text-primary)',
+              opacity: todo.completed ? 0.6 : 1,
             }}
+            transition={{ duration: 0.3 }}
           >
             {todo.title}
-          </p>
+          </motion.p>
         )}
         {todo.tags.length > 0 && (
           <div className="flex gap-1.5 mt-2">
@@ -206,6 +221,6 @@ export default function TodoItem({ todo }: TodoItemProps) {
           visible={showButtons}
         />
       )}
-    </div>
+    </motion.div>
   )
 }
