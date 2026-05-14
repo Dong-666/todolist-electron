@@ -34,6 +34,24 @@ export default function App() {
       const weatherData = await fetchWeather()
       setWeather(weatherData)
 
+      // 定时刷新天气（每1小时），失败则每10s重试，最多3次
+      const weatherInterval = setInterval(async () => {
+        let attempts = 0
+        const maxAttempts = 3
+        const retryDelay = 10000 // 10秒
+
+        const tryFetchWeather = async (): Promise<void> => {
+          const data = await fetchWeather()
+          if (data) {
+            setWeather(data)
+          } else if (attempts < maxAttempts) {
+            attempts++
+            setTimeout(tryFetchWeather, retryDelay)
+          }
+        }
+        tryFetchWeather()
+      }, 60 * 60 * 1000)
+
       const savedFocusMinutes = await window.electronAPI.getStore('focusMinutes') as number
       const savedBreakMinutes = await window.electronAPI.getStore('breakMinutes') as number
       if (savedFocusMinutes) setFocusDuration(savedFocusMinutes)
@@ -43,6 +61,8 @@ export default function App() {
       setTimeout(() => {
         setShowLoader(false)
       }, 1200)
+
+      return () => clearInterval(weatherInterval)
     }
     initApp()
 
