@@ -13,6 +13,7 @@ export default function TodoItem({ todo }: TodoItemProps) {
   const [showButtons, setShowButtons] = useState(false)
   const [isEditingTitle, setIsEditingTitle] = useState(false)
   const [titleDraft, setTitleDraft] = useState(todo.title)
+  const [priorityDropup, setPriorityDropup] = useState(false)
   const dropdownRef = useRef<HTMLDivElement>(null)
 
   const handleTitleDoubleClick = () => {
@@ -47,6 +48,14 @@ export default function TodoItem({ todo }: TodoItemProps) {
       document.addEventListener('mousedown', handleClickOutside)
     }
     return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [showPriority])
+
+  useEffect(() => {
+    if (showPriority && dropdownRef.current) {
+      const rect = dropdownRef.current.getBoundingClientRect()
+      const viewportHeight = window.innerHeight
+      setPriorityDropup(rect.bottom + 150 > viewportHeight)
+    }
   }, [showPriority])
 
   const priorityOptions: Array<{ value: 1 | 2 | 3 | null; label: string }> = [
@@ -158,9 +167,9 @@ export default function TodoItem({ todo }: TodoItemProps) {
           />
           {showPriority && (
             <motion.div
-              initial={{ opacity: 0, scale: 0.95, y: -5 }}
+              initial={{ opacity: 0, scale: 0.95, y: priorityDropup ? 5 : -5 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
-              className="absolute right-0 top-full mt-1 py-1 rounded-lg shadow-xl z-50 w-28"
+              className={`absolute right-0 py-1 rounded-lg shadow-xl z-50 w-28 ${priorityDropup ? 'bottom-full mb-1' : 'top-full mt-1'}`}
               style={{ background: 'var(--bg-card)', border: '1px solid var(--border)' }}
             >
               {priorityOptions.map((opt) => (
