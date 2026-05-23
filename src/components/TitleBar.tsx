@@ -37,7 +37,7 @@ export default function TitleBar({ onSettingsClick, theme = 'light', weather }: 
             className="flex items-center gap-1.5 px-2 py-1 rounded-lg"
             style={{ background: 'var(--bg-tertiary)', color: 'var(--text-secondary)' }}
           >
-            <span className="text-sm">{getWeatherIcon(weather.code)}</span>
+            <span className="text-sm">{getWeatherIcon(weather.code, weather.isNight)}</span>
             <span className="text-xs font-medium">{weather.city}</span>
             <span className="text-xs" style={{ color: 'var(--text-tertiary)' }}>{weather.temperature}°C</span>
           </div>

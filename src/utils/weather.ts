@@ -2,6 +2,7 @@ export interface WeatherData {
   city: string
   temperature: number
   code: number
+  isNight: boolean
 }
 
 const WMO_CODES: Record<number, string> = {
@@ -31,7 +32,17 @@ const WMO_CODES: Record<number, string> = {
   99: '⛈️',  // Thunderstorm with heavy hail
 }
 
-export function getWeatherIcon(code: number): string {
+const NIGHT_CODES: Record<number, string> = {
+  0: '🌙',   // Clear sky - night
+  1: '⛅',   // Mainly clear - night
+  2: '⛅',   // Partly cloudy
+  3: '☁️',   // Overcast
+}
+
+export function getWeatherIcon(code: number, isNight: boolean): string {
+  if (isNight && NIGHT_CODES[code]) {
+    return NIGHT_CODES[code]
+  }
   return WMO_CODES[code] || '🌡️'
 }
 
@@ -45,16 +56,27 @@ export async function fetchWeather(): Promise<WeatherData | null> {
     const { lat, lon, city } = geo
     if (!lat || !lon) return null
 
-    // Step 2: Get weather from Open-Meteo
-    const weatherUrl = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current_weather=true`
+    // Step 2: Get weather from Open-Meteo (include daily for sunrise/sunset)
+    const weatherUrl = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current_weather=true&daily=sunrise,sunset&timezone=auto`
     const weatherRes = await fetch(weatherUrl)
     if (!weatherRes.ok) return null
     const weather = await weatherRes.json()
+
+    // Determine if it's currently night time
+    const now = Date.now()
+    const daily = weather.daily
+    let isNight = false
+    if (daily?.sunrise && daily?.sunset) {
+      const sunrise = new Date(daily.sunrise[0]).getTime()
+      const sunset = new Date(daily.sunset[0]).getTime()
+      isNight = now < sunrise || now > sunset
+    }
 
     return {
       city: city || 'Unknown',
       temperature: Math.round(weather.current_weather?.temperature ?? 0),
       code: weather.current_weather?.weathercode ?? 0,
+      isNight,
     }
   } catch {
     return null
