@@ -1,36 +1,24 @@
-import { useState, useRef, useEffect } from 'react'
+import { useState } from 'react'
 import { motion } from 'framer-motion'
 import { useStore } from '../store'
+import PriorityDropdown from './PriorityDropdown'
 
 interface AddTodoFormProps {
   listId: string
 }
 
+const priorityOptions = [
+  { value: 0, label: '无', dotClass: '' },
+  { value: 1, label: '高', dotClass: 'priority-high' },
+  { value: 2, label: '中', dotClass: 'priority-medium' },
+  { value: 3, label: '低', dotClass: 'priority-low' },
+]
+
 export default function AddTodoForm({ listId }: AddTodoFormProps) {
   const [title, setTitle] = useState('')
   const [priority, setPriority] = useState<0 | 1 | 2 | 3>(0)
-  const [showDropdown, setShowDropdown] = useState(false)
+  const [isOpen, setIsOpen] = useState(false)
   const { addTodo } = useStore()
-  const dropdownRef = useRef<HTMLDivElement>(null)
-
-  useEffect(() => {
-    const handleClickOutside = (e: MouseEvent) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
-        setShowDropdown(false)
-      }
-    }
-    if (showDropdown) {
-      document.addEventListener('mousedown', handleClickOutside)
-    }
-    return () => document.removeEventListener('mousedown', handleClickOutside)
-  }, [showDropdown])
-
-  const priorityOptions = [
-    { value: 0, label: '无', dotClass: '' },
-    { value: 1, label: '高', dotClass: 'priority-high' },
-    { value: 2, label: '中', dotClass: 'priority-medium' },
-    { value: 3, label: '低', dotClass: 'priority-low' },
-  ]
 
   const currentPriority = priorityOptions.find(p => p.value === priority) || priorityOptions[0]
 
@@ -74,74 +62,47 @@ export default function AddTodoForm({ listId }: AddTodoFormProps) {
       transition={{ duration: 0.3 }}
     >
       {/* Priority dropdown */}
-      <div className="relative" ref={dropdownRef}>
-        <button
-          type="button"
-          onClick={() => setShowDropdown(!showDropdown)}
-          className="flex items-center justify-between px-4"
-          style={{
-            width: '80px',
-            height: '50px',
-            background: 'var(--bg-tertiary)',
-            border: '1px solid transparent',
-            borderRadius: '12px',
-            color: 'var(--text-primary)',
-            cursor: 'pointer',
-            transition: 'all 200ms ease',
-          }}
-          onMouseEnter={(e) => {
-            e.currentTarget.style.background = 'var(--bg-card)'
-            e.currentTarget.style.borderColor = 'var(--border)'
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.background = 'var(--bg-tertiary)'
-            e.currentTarget.style.borderColor = 'transparent'
-          }}
-        >
-          <div className="flex items-center gap-2">
-            {priority > 0 ? (
-              <div className={`priority-dot ${['priority-high', 'priority-medium', 'priority-low'][priority - 1]}`} />
-            ) : (
-              <div className="w-2 h-2 rounded-full opacity-30" style={{ background: 'var(--text-tertiary)' }} />
-            )}
-            <span className="text-xs">{currentPriority.label}</span>
-          </div>
-          <span style={{ color: 'var(--text-tertiary)', fontSize: '8px' }}>▼</span>
-        </button>
-        {showDropdown && (
-          <motion.div
-            initial={{ opacity: 0, scale: 0.95, y: -5 }}
-            animate={{ opacity: 1, scale: 1, y: 0 }}
-            className="absolute left-0 top-full mt-1 py-1 rounded-xl shadow-xl z-50 w-28"
-            style={{ background: 'var(--bg-card)', border: '1px solid var(--border)' }}
+      <PriorityDropdown
+        value={priority || null}
+        onChange={(val) => setPriority((val || 0) as 0 | 1 | 2 | 3)}
+        isOpen={isOpen}
+        onClose={() => setIsOpen(false)}
+        button={
+          <button
+            type="button"
+            onClick={() => setIsOpen(!isOpen)}
+            className="flex items-center justify-between px-4"
+            style={{
+              width: '80px',
+              height: '50px',
+              background: 'var(--bg-tertiary)',
+              border: '1px solid transparent',
+              borderRadius: '12px',
+              color: 'var(--text-primary)',
+              cursor: 'pointer',
+              transition: 'all 200ms ease',
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.background = 'var(--bg-card)'
+              e.currentTarget.style.borderColor = 'var(--border)'
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.background = 'var(--bg-tertiary)'
+              e.currentTarget.style.borderColor = 'transparent'
+            }}
           >
-            {priorityOptions.map((opt) => (
-              <button
-                type="button"
-                key={opt.value}
-                onClick={() => {
-                  setPriority(opt.value as 0 | 1 | 2 | 3)
-                  setShowDropdown(false)
-                }}
-                className="w-full px-3 py-1.5 text-xs text-left flex items-center gap-2 transition-colors"
-                style={{
-                  background: priority === opt.value ? 'rgba(59, 130, 246, 0.12)' : 'transparent',
-                  color: opt.value > 0 ? `var(--priority-${['high', 'medium', 'low'][opt.value - 1]})` : 'var(--text-secondary)'
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.background = 'rgba(59, 130, 246, 0.12)'
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.background = priority === opt.value ? 'rgba(59, 130, 246, 0.12)' : 'transparent'
-                }}
-              >
-                <div className={opt.dotClass ? `priority-dot ${opt.dotClass}` : 'w-2.5 h-2.5 rounded-full opacity-30'} style={opt.value === 0 ? { background: 'var(--text-tertiary)' } : {}} />
-                {opt.label}
-              </button>
-            ))}
-          </motion.div>
-        )}
-      </div>
+            <div className="flex items-center gap-2">
+              {priority > 0 ? (
+                <div className={`priority-dot ${['priority-high', 'priority-medium', 'priority-low'][priority - 1]}`} />
+              ) : (
+                <div className="w-2 h-2 rounded-full opacity-30" style={{ background: 'var(--text-tertiary)' }} />
+              )}
+              <span className="text-xs">{currentPriority.label}</span>
+            </div>
+            <span style={{ color: 'var(--text-tertiary)', fontSize: '8px' }}>▼</span>
+          </button>
+        }
+      />
       <motion.input
         type="text"
         value={title}

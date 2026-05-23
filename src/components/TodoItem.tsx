@@ -1,7 +1,8 @@
-import { useState, useRef, useEffect } from 'react'
+import { useState } from 'react'
 import { motion } from 'framer-motion'
 import { useStore, Todo } from '../store'
 import ActionButton from './ActionButton'
+import PriorityDropdown from './PriorityDropdown'
 
 interface TodoItemProps {
   todo: Todo
@@ -9,12 +10,9 @@ interface TodoItemProps {
 
 export default function TodoItem({ todo }: TodoItemProps) {
   const { toggleTodo, deleteTodo, startFocus, updateTodo } = useStore()
-  const [showPriority, setShowPriority] = useState(false)
   const [showButtons, setShowButtons] = useState(false)
   const [isEditingTitle, setIsEditingTitle] = useState(false)
   const [titleDraft, setTitleDraft] = useState(todo.title)
-  const [priorityDropup, setPriorityDropup] = useState(false)
-  const dropdownRef = useRef<HTMLDivElement>(null)
 
   const handleTitleDoubleClick = () => {
     setTitleDraft(todo.title)
@@ -38,40 +36,12 @@ export default function TodoItem({ todo }: TodoItemProps) {
     if (e.key === 'Escape') handleTitleCancel()
   }
 
-  useEffect(() => {
-    const handleClickOutside = (e: MouseEvent) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
-        setShowPriority(false)
-      }
-    }
-    if (showPriority) {
-      document.addEventListener('mousedown', handleClickOutside)
-    }
-    return () => document.removeEventListener('mousedown', handleClickOutside)
-  }, [showPriority])
-
-  useEffect(() => {
-    if (showPriority && dropdownRef.current) {
-      const rect = dropdownRef.current.getBoundingClientRect()
-      const viewportHeight = window.innerHeight
-      setPriorityDropup(rect.bottom + 150 > viewportHeight)
-    }
-  }, [showPriority])
-
-  const priorityOptions: Array<{ value: 1 | 2 | 3 | null; label: string }> = [
-    { value: null, label: '无' },
-    { value: 1, label: '高' },
-    { value: 2, label: '中' },
-    { value: 3, label: '低' },
-  ]
-
   return (
     <motion.div
       className={`todo-item group ${todo.completed ? 'completed' : ''}`}
       onMouseEnter={() => setShowButtons(true)}
       onMouseLeave={() => {
         setShowButtons(false)
-        setShowPriority(false)
       }}
       layout
       initial={false}
@@ -150,57 +120,26 @@ export default function TodoItem({ todo }: TodoItemProps) {
 
       {/* Priority selector */}
       {!todo.completed && (
-        <div className="relative" ref={dropdownRef}>
-          <ActionButton
-            icon={
-              todo.priority ? (
-                <div className={`priority-dot priority-${['high', 'medium', 'low'][todo.priority - 1]}`} />
-              ) : (
-                <span className="text-xs">⚡</span>
-              )
-            }
-            onClick={() => setShowPriority(!showPriority)}
-            color={todo.priority ? `var(--priority-${['high', 'medium', 'low'][todo.priority - 1]})` : 'var(--text-tertiary)'}
-            hoverBg="rgba(59, 130, 246, 0.12)"
-            title="设置优先级"
-            visible={showButtons || !!todo.priority}
-          />
-          {showPriority && (
-            <motion.div
-              initial={{ opacity: 0, scale: 0.95, y: priorityDropup ? 5 : -5 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              className={`absolute right-0 py-1 rounded-lg shadow-xl z-50 w-28 ${priorityDropup ? 'bottom-full mb-1' : 'top-full mt-1'}`}
-              style={{ background: 'var(--bg-card)', border: '1px solid var(--border)' }}
-            >
-              {priorityOptions.map((opt) => (
-                <button
-                  key={opt.label}
-                  onClick={() => {
-                    updateTodo(todo.id, { priority: opt.value })
-                    setShowPriority(false)
-                  }}
-                  className="w-full px-3 py-1.5 text-xs text-left flex items-center gap-2 transition-colors"
-                  style={{
-                    background: todo.priority === opt.value ? 'rgba(59, 130, 246, 0.12)' : 'transparent',
-                    color: opt.value ? `var(--priority-${['high', 'medium', 'low'][opt.value - 1]})` : 'var(--text-secondary)'
-                  }}
-                  onMouseEnter={(e) => {
-                    e.currentTarget.style.background = 'rgba(59, 130, 246, 0.12)'
-                  }}
-                  onMouseLeave={(e) => {
-                    e.currentTarget.style.background = todo.priority === opt.value ? 'rgba(59, 130, 246, 0.12)' : 'transparent'
-                  }}
-                >
-                  <div
-                    className={opt.value ? `priority-dot priority-${['high', 'medium', 'low'][opt.value - 1]}` : 'w-2.5 h-2.5 rounded-full opacity-30'}
-                    style={opt.value ? {} : { background: 'var(--text-tertiary)' }}
-                  />
-                  {opt.label}
-                </button>
-              ))}
-            </motion.div>
-          )}
-        </div>
+        <PriorityDropdown
+          value={todo.priority as number | null}
+          onChange={(val) => updateTodo(todo.id, { priority: val as 1 | 2 | 3 | null })}
+          button={
+            <ActionButton
+              icon={
+                todo.priority ? (
+                  <div className={`priority-dot priority-${['high', 'medium', 'low'][todo.priority - 1]}`} />
+                ) : (
+                  <span className="text-xs">⚡</span>
+                )
+              }
+              onClick={() => {}}
+              color={todo.priority ? `var(--priority-${['high', 'medium', 'low'][todo.priority - 1]})` : 'var(--text-tertiary)'}
+              hoverBg="rgba(59, 130, 246, 0.12)"
+              title="设置优先级"
+              visible={showButtons || !!todo.priority}
+            />
+          }
+        />
       )}
 
       {/* Focus button */}
