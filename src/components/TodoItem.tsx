@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { DragEvent, useState } from 'react'
 import { motion } from 'framer-motion'
 import { useStore, Todo } from '../store'
 import ActionButton from './ActionButton'
@@ -6,9 +6,31 @@ import PriorityDropdown from './PriorityDropdown'
 
 interface TodoItemProps {
   todo: Todo
+  draggable?: boolean
+  isDragging?: boolean
+  isDropTarget?: boolean
+  insertAfter?: boolean
+  canDrop?: boolean
+  onNativeDragStart?: (event: DragEvent<HTMLDivElement>) => void
+  onDragOver?: (event: DragEvent<HTMLDivElement>) => void
+  onDragLeave?: () => void
+  onDrop?: (event: DragEvent<HTMLDivElement>) => void
+  onDragEnd?: () => void
 }
 
-export default function TodoItem({ todo }: TodoItemProps) {
+export default function TodoItem({
+  todo,
+  draggable = false,
+  isDragging = false,
+  isDropTarget = false,
+  insertAfter = false,
+  canDrop = false,
+  onNativeDragStart,
+  onDragOver,
+  onDragLeave,
+  onDrop,
+  onDragEnd,
+}: TodoItemProps) {
   const { toggleTodo, deleteTodo, startFocus, updateTodo } = useStore()
   const [showButtons, setShowButtons] = useState(false)
   const [isEditingTitle, setIsEditingTitle] = useState(false)
@@ -38,7 +60,13 @@ export default function TodoItem({ todo }: TodoItemProps) {
 
   return (
     <motion.div
-      className={`todo-item group ${todo.completed ? 'completed' : ''}`}
+      className={`todo-item group ${todo.completed ? 'completed' : ''} ${draggable ? 'todo-item-draggable' : ''} ${isDragging ? 'dragging' : ''} ${isDropTarget ? (canDrop ? (insertAfter ? 'drop-target insert-after' : 'drop-target insert-before') : 'drop-target-invalid') : ''}`}
+      draggable={draggable}
+      onDragStartCapture={onNativeDragStart}
+      onDragOver={onDragOver}
+      onDragLeave={onDragLeave}
+      onDrop={onDrop}
+      onDragEnd={onDragEnd}
       onMouseEnter={() => setShowButtons(true)}
       onMouseLeave={() => {
         setShowButtons(false)

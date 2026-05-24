@@ -11,6 +11,7 @@ export interface Todo {
   listId: string
   createdAt: number
   updatedAt: number
+  sortOrder?: number
   deletedAt: number | null
 }
 
@@ -141,11 +142,13 @@ export const useStore = create<StoreState>((set) => ({
   }),
   todos: [],
   addTodo: (todo) => set((state) => {
+    const now = Date.now()
     const newTodo = {
       ...todo,
-      id: Date.now().toString(),
-      createdAt: Date.now(),
-      updatedAt: Date.now(),
+      id: now.toString(),
+      createdAt: now,
+      updatedAt: now,
+      sortOrder: Number.MAX_SAFE_INTEGER - now,
       deletedAt: null
     }
     const newTodos = [...state.todos, newTodo]

@@ -1,10 +1,15 @@
+import { DragEvent, useRef, useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { useStore } from '../store'
+import { Todo, useStore } from '../store'
 import TodoItem from './TodoItem'
 import AddTodoForm from './AddTodoForm'
 
 export default function TodoList() {
-  const { todos, activeListId, filter, setFilter, todoLists } = useStore()
+  const { todos, activeListId, filter, setFilter, todoLists, setTodos } = useStore()
+  const [draggedTodoId, setDraggedTodoId] = useState<string | null>(null)
+  const [dropTargetTodoId, setDropTargetTodoId] = useState<string | null>(null)
+  const [insertAfterTargetId, setInsertAfterTargetId] = useState<string | null>(null)
+  const dragStartPosition = useRef<{ x: number; y: number } | null>(null)
   const activeList = todoLists.find(l => l.id === activeListId)
 
   const filteredTodos = todos
@@ -20,14 +25,129 @@ export default function TodoList() {
       // 已完成的放到最后
       if (a.completed !== b.completed) return a.completed ? 1 : -1
       // 未完成的按优先级排序（高优先级在前）
-      if (a.priority && b.priority) return a.priority - b.priority
-      if (a.priority) return -1
-      if (b.priority) return 1
+      const aPriority = a.priority ?? 4
+      const bPriority = b.priority ?? 4
+      if (aPriority !== bPriority) return aPriority - bPriority
+      if (a.sortOrder !== undefined || b.sortOrder !== undefined) {
+        return (a.sortOrder ?? Number.MAX_SAFE_INTEGER - a.createdAt) - (b.sortOrder ?? Number.MAX_SAFE_INTEGER - b.createdAt)
+      }
       return b.createdAt - a.createdAt
     })
 
   const activeCount = filteredTodos.filter(t => !t.completed).length
   const completedCount = filteredTodos.filter(t => t.completed).length
+  const draggedTodo = draggedTodoId ? todos.find(t => t.id === draggedTodoId) : null
+
+  const isVerticalDrag = (event: DragEvent<HTMLDivElement>) => {
+    if (!dragStartPosition.current) return true
+
+    const deltaX = Math.abs(event.clientX - dragStartPosition.current.x)
+    const deltaY = Math.abs(event.clientY - dragStartPosition.current.y)
+    return deltaY >= deltaX
+  }
+
+  const canDropOnTodo = (targetTodo: Todo, event?: DragEvent<HTMLDivElement>) => {
+    if (!draggedTodo || draggedTodo.id === targetTodo.id) return false
+    if (draggedTodo.completed !== targetTodo.completed) return false
+    if (event && !isVerticalDrag(event)) return false
+
+    return true
+  }
+
+  const clearDragState = () => {
+    setDraggedTodoId(null)
+    setDropTargetTodoId(null)
+    setInsertAfterTargetId(null)
+    dragStartPosition.current = null
+  }
+
+  const handleDragStart = (todo: Todo, event: DragEvent<HTMLDivElement>) => {
+    const target = event.target as HTMLElement
+
+    if (target.closest('button, input, select, textarea')) {
+      event.preventDefault()
+      return
+    }
+
+    setDraggedTodoId(todo.id)
+    setDropTargetTodoId(null)
+    dragStartPosition.current = { x: event.clientX, y: event.clientY }
+    event.dataTransfer.effectAllowed = 'move'
+    event.dataTransfer.setData('text/plain', todo.id)
+  }
+
+  const handleDragOver = (todo: Todo, event: DragEvent<HTMLDivElement>) => {
+    if (!draggedTodo) return
+
+    const isVertical = isVerticalDrag(event)
+    if (isVertical && draggedTodo.id !== todo.id) {
+      setDropTargetTodoId(todo.id)
+      const targetRect = event.currentTarget.getBoundingClientRect()
+      setInsertAfterTargetId(event.clientY > targetRect.top + targetRect.height / 2 ? todo.id : null)
+    } else {
+      setDropTargetTodoId(null)
+      setInsertAfterTargetId(null)
+    }
+
+    if (!isVertical) {
+      event.dataTransfer.dropEffect = 'none'
+      return
+    }
+
+    event.preventDefault()
+    event.dataTransfer.dropEffect = canDropOnTodo(todo, event) ? 'move' : 'none'
+  }
+
+  const moveTodoToTarget = (sourceTodo: Todo, targetTodo: Todo, insertAfter: boolean) => {
+    const visibleSameStatusTodos = filteredTodos.filter(t => t.completed === sourceTodo.completed)
+    const reorderedTodos = visibleSameStatusTodos.filter(t => t.id !== sourceTodo.id)
+    const targetIndex = reorderedTodos.findIndex(t => t.id === targetTodo.id)
+
+    if (targetIndex === -1) return
+
+    reorderedTodos.splice(targetIndex + (insertAfter ? 1 : 0), 0, {
+      ...sourceTodo,
+      priority: targetTodo.priority,
+    })
+
+    const now = Date.now()
+    const orderByTodoId = new Map(reorderedTodos.map((t, index) => [t.id, index]))
+    const nextTodos = todos.map(t => {
+      const nextSortOrder = orderByTodoId.get(t.id)
+
+      if (t.id === sourceTodo.id) {
+        return {
+          ...t,
+          priority: targetTodo.priority,
+          sortOrder: nextSortOrder,
+          updatedAt: now,
+        }
+      }
+
+      if (nextSortOrder !== undefined) {
+        return {
+          ...t,
+          sortOrder: nextSortOrder,
+        }
+      }
+
+      return t
+    })
+
+    setTodos(nextTodos)
+  }
+
+  const handleDrop = (todo: Todo, event: DragEvent<HTMLDivElement>) => {
+    event.preventDefault()
+
+    if (canDropOnTodo(todo, event) && draggedTodo) {
+      const targetRect = event.currentTarget.getBoundingClientRect()
+      const insertAfter = event.clientY > targetRect.top + targetRect.height / 2
+      moveTodoToTarget(draggedTodo, todo, insertAfter)
+    }
+
+    clearDragState()
+  }
 
   return (
     <div className="h-full flex flex-col" style={{ background: 'var(--bg-primary)' }}>
@@ -94,7 +214,19 @@ export default function TodoList() {
               transition={{ delay: index * 0.04, duration: 0.3 }}
               className="mb-2.5"
             >
-              <TodoItem todo={todo} />
+              <TodoItem
+                todo={todo}
+                draggable
+                isDragging={draggedTodoId === todo.id}
+                isDropTarget={dropTargetTodoId === todo.id}
+                insertAfter={dropTargetTodoId === todo.id ? insertAfterTargetId === todo.id : false}
+                canDrop={canDropOnTodo(todo)}
+                onNativeDragStart={(event) => handleDragStart(todo, event)}
+                onDragOver={(event) => handleDragOver(todo, event)}
+                onDragLeave={() => setDropTargetTodoId(current => current === todo.id ? null : current)}
+                onDrop={(event) => handleDrop(todo, event)}
+                onDragEnd={clearDragState}
+              />
             </motion.div>
           ))}
         </AnimatePresence>

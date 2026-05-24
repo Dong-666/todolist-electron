@@ -334,6 +334,41 @@ body {
   box-shadow: var(--shadow-md);
 }
 
+.todo-item-draggable {
+  cursor: grab;
+}
+
+.todo-item-draggable:active {
+  cursor: grabbing;
+}
+
+.todo-item.dragging {
+  opacity: 0.45 !important;
+  border-color: var(--accent);
+  box-shadow: var(--shadow-glow);
+}
+
+.todo-item.drop-target {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 2px var(--accent-soft), var(--shadow-md);
+  transform: translateY(-1px);
+}
+
+.todo-item.drop-target.insert-before {
+  border-top: 2px solid var(--accent);
+  box-shadow: 0 -2px 0 0 var(--accent);
+}
+
+.todo-item.drop-target.insert-after {
+  border-bottom: 2px solid var(--accent);
+  box-shadow: 0 2px 0 0 var(--accent);
+}
+
+.todo-item.drop-target-invalid {
+  border-color: var(--priority-high);
+  box-shadow: 0 0 0 2px rgba(248, 113, 113, 0.16), var(--shadow-sm);
+}
+
 .todo-item.completed {
   opacity: 0.5;
 }
